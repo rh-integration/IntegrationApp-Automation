@@ -1,0 +1,58 @@
+---
+
+ - hosts: localhost
+   connection: local
+   tasks:
+
+   - name: Check if jmespath is installed locally
+     debug: msg={{dummy|json_query('@')}}
+     register: check_jmespath
+     ignore_errors: yes
+     vars:
+       dummy: Hello World
+
+   - name: Check if jinja 2.8 is installed locally
+     debug: msg={{(dummy|selectattr("id", "equalto", "hello")|first)['value']}}
+     vars:
+       dummy:
+       - id: hello
+         value: Hello World
+     register: check_jinja28
+     ignore_errors: yes
+
+   - set_fact:
+       jmespath_missing: '{{ check_jmespath|failed }}'
+       jinja28_missing: '{{ check_jinja28|failed }}'
+       on_rhel7: '{{ ansible_distribution == ''RedHat'' and ansible_distribution_major_version|int == 7 }}'
+
+   - debug:
+       msg: "jmespath is not installed on the machine that runs the playbooks"
+     when: jmespath_missing
+
+   - fail:
+       msg: "This playbook can install by itself the missing packages on RHEL 7.x but we are not on such system (detected OS : {{ansible_distribution}} {{ansible_distribution_version}}). See https://github.com/nmasse-itix/OpenShift-Lab/issues/5 for more information."
+     when: 'jmespath_missing and not on_rhel7'
+
+   - fail:
+       msg: "This playbook can install by itself the missing packages on RHEL 7.x but we are not on such system (detected OS : {{ansible_distribution}} {{ansible_distribution_version}}). See https://github.com/nmasse-itix/OpenShift-Lab/issues/9 for more information."
+     when: 'jinja28_missing and not on_rhel7'
+
+   - name: Enable the RHSCL repo
+     command: subscription-manager repos --enable rhel-server-rhscl-7-rpms
+     become: yes
+     when: '(jmespath_missing or jinja28_missing) and on_rhel7'
+
+   - name: Install PIP
+     yum: name=python27-python-pip state=installed
+     become: yes
+     when: '(jmespath_missing or jinja28_missing) and on_rhel7'
+
+   - name: Install JMESPATH
+     command: 'scl enable python27 ''pip install --install-option="--install-purelib=/usr/lib/python2.7/site-packages/" jmespath'' '
+     become: yes
+     when: 'jmespath_missing and on_rhel7'
+
+   - name: Update jinja to versions 2.8
+     command: 'scl enable python27 ''pip install --install-option="--install-purelib=/usr/lib/python2.7/site-packages/" jinja2'' '
+     become: yes
+     when: 'jinja28_missing and on_rhel7'

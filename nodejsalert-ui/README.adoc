@@ -1,0 +1,34 @@
+= Node.js WebApp
+
+IMPORTANT: This booster requires Node.js 8.x or greater and `npm` 5 or greater.
+
+
+
+== Runing the App Locally
+
+To run this booster on your local host:
+
+
+
+- $ npm install && npm start
+- http://localhost:8080/
+
+ ![alt text](../images/nodejsui.png "web application")
+
+== Running the Booster on a Single-node OpenShift Cluster
+If you have a single-node OpenShift cluster, such as Minishift or Red Hat Container Development Kit, link:http://launcher.fabric8.io/docs/minishift-installation.html[installed and running], you can also deploy your booster there. A single-node OpenShift cluster provides you with access to a cloud environment that is similar to a production environment.
+
+To deploy your booster to a running single-node OpenShift cluster:
+[source,bash,options="nowrap",subs="attributes+"]
+----
+
+
+$ oc new-project MY_PROJECT_NAME
+
+$ npm install && npm run openshift
+----
+
+== More Information
+You can learn more about this booster and rest of the Node.js runtime in the link:http://launcher.fabric8.io/docs/nodejs-runtime.html[Node.js Runtime Guide].
+
+

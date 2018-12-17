@@ -1,0 +1,43 @@
+---
+swagger: "2.0"
+info:
+  title: Fuse-Useralert-API
+  version: 1.0.0
+host: 0.0.0.0
+basePath: /cicd
+schemes:
+- http
+paths:
+  /maingateway/profile/{acctid}:
+    get:
+      tags:
+      - maingateway
+      operationId: route1
+      parameters:
+      - name: acctid
+        in: path
+        description: user profile id
+        required: true
+        type: string
+      responses:
+        200:
+          description: data recived
+  /maingateway/logo:
+    get:
+      tags:
+      - maingateway
+      operationId: route2
+      responses:
+        200:
+          description: OK
+securityDefinitions:
+  apikey:
+    type: apiKey
+    description: Use a 3scale API Key
+    name: api-key
+    in: query
+security:
+- apikey: []
+tags:
+- name: maingateway
+  description: API Gateway

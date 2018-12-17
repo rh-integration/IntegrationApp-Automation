@@ -1,0 +1,11 @@
+- hosts: threescale
+  gather_facts: no
+  vars:
+    threescale_cicd_openapi_file: openapi-spec.yaml
+    threescale_cicd_api_backend_hostname: 'maingateway-service-cicddemo.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com:80'
+    threescale_cicd_api_backend_scheme: http
+    threescale_cicd_api_base_system_name: 3scale-prod
+    threescale_cicd_openapi_smoketest_operation: route2
+    threescale_cicd_validate_openapi: false
+  roles:
+  - nmasse-itix.threescale-cicd

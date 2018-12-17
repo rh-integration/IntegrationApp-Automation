@@ -1,0 +1,3 @@
+---
+- src: nmasse-itix.threescale-cicd
+  version: master
