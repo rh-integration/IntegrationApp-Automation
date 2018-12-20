@@ -1,0 +1,238 @@
+body {
+    padding: 50px;
+    font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+
+/* index */
+
+.control,
+.search {
+    margin: 10px;
+}
+
+.search input[type='text'] {
+    height: 25px;
+    padding: 0 5px;
+}
+
+a {
+    padding: 5px 20px;
+    border: none;
+    background: #7DCD85;
+    color: #FFFFFF;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+a:hover {
+    background: #6BB072;
+}
+
+.table {
+    border-collapse: collapse;
+    font-size: 16px;
+    text-align: center;
+}
+
+.table tr {
+    height: 35px;
+    border-bottom: 1px solid #dddddd;
+}
+
+.table tr th {
+    padding: 0 10px;
+    font-weight: bold;
+}
+
+.table tr td {
+    padding: 0 10px;
+}
+
+
+/* useradd */
+
+.row {
+    width: 280px;
+    height: 30px;
+    margin: 5px;
+}
+
+.row label {
+    display: inline;
+    width: 80px;
+    font-size: 16px;
+}
+
+.row input[type='text'],
+.row input[type='password'] {
+    float: right;
+    height: 20px;
+    padding: 0 5px;
+}
+
+.btn {
+    width: 80px;
+    height: 30px;
+    border: none;
+    color: #FFFFFF;
+    background: #7DCD85;
+    cursor: pointer;
+    outline: none;
+    -webkit-transition: background .25s;
+    -moz-transition: background .25s;
+    -ms-transition: background .25s;
+    -o-transition: background .25s;
+    transition: background .25s;
+}
+
+.btn:hover {
+    background: #6BB072;
+}
+
+.msgerr {
+    margin: 5px;
+    color: #f00;
+    font-size: 12px;
+}
+
+/* Demo only */
+body {
+	font-family: "Segoe UI", Tahoma, Helvetica, "Helvetica Neue", Arial, sans-serif;
+	padding: 1em;
+}
+h1 {
+	font-size: 1.6em;
+	margin: 0 0 1.5em;
+}
+h1, h1 a {
+	color: #368512;
+}
+h1 span {
+	font-weight: normal;
+	font-size: .9em;
+}
+
+body, select {
+	font-size: 1em;
+}
+
+.custom-select {
+	position: relative;
+}
+.custom-select select {
+	position: absolute;
+	top: 0;
+	right: 0;
+	padding: 0;
+	opacity: 0.001;
+	filter: alpha(opacity=.1);
+}
+.custom-select select,
+.custom-select .btn-select {
+	/* the hidden select and the button should line up */
+	width: 20em;
+	padding: .2em .5em;
+	font-weight: bold;
+	-webkit-box-sizing: border-box;
+	box-sizing: border-box;
+}
+.custom-select .btn-select {
+	position: relative;
+	display: inline-block;
+	border: 1px solid #ccc;
+	border-radius: .2em;
+}
+.btn-select.btn-focus {
+	border-color: #81B9F5;
+	box-shadow: 0 0 .4em rgba(200,200,200,.8);
+}
+.custom-select .btn-select:after {
+	content: " ";
+	display: block;
+	background: url(arrow-solid-down.png) no-repeat 0 0; /* PNG for demo only; should be an SVG with PNG fallback in production */
+	width: 1em;
+	height: 1em;
+	position: absolute;
+	top: .2em;
+	right: 0;
+	background-position: 0 .5em;
+}
+.custom-select .label-text {
+	display: inline-block;
+	padding: 0 1em .3em 0;
+}
+
+
+
+/*Styling Selectbox*/
+.dropdown {
+  width: 300px;
+  display: inline-block;
+  background-color: #fff;
+  border-radius: 5px;
+  box-shadow: 0 0 2px rgb(204, 204, 204);
+  transition: all .5s ease;
+  position: relative;
+  font-size: 14px;
+  color: #474747;
+  height: 100%;
+  text-align: left
+}
+.dropdown .select {
+    cursor: pointer;
+    display: block;
+    padding: 10px
+}
+.dropdown .select > i {
+    font-size: 13px;
+    color: #888;
+    cursor: pointer;
+    transition: all .3s ease-in-out;
+    float: right;
+    line-height: 20px
+}
+.dropdown:hover {
+    box-shadow: 0 0 4px rgb(204, 204, 204)
+}
+.dropdown:active {
+    background-color: #f8f8f8
+}
+.dropdown.active:hover,
+.dropdown.active {
+    box-shadow: 0 0 4px rgb(204, 204, 204);
+    border-radius: 5px 5px 0 0;
+    background-color: #f8f8f8
+}
+.dropdown.active .select > i {
+    transform: rotate(-90deg)
+}
+.dropdown .dropdown-menu {
+    position: absolute;
+    background-color: #fff;
+    width: 100%;
+    left: 0;
+    margin-top: 1px;
+    box-shadow: 0 1px 2px rgb(204, 204, 204);
+    border-radius: 0 1px 5px 5px;
+    overflow: hidden;
+    display: none;
+    max-height: 144px;
+    overflow-y: auto;
+    z-index: 9
+}
+.dropdown .dropdown-menu li {
+    padding: 10px;
+    transition: all .2s ease-in-out;
+    cursor: pointer
+}
+.dropdown .dropdown-menu {
+    padding: 0;
+    list-style: none
+}
+.dropdown .dropdown-menu li:hover {
+    background-color: #f2f2f2
+}
+.dropdown .dropdown-menu li:active {
+    background-color: #e2e2e2
+}

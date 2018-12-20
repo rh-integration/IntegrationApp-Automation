@@ -1,0 +1,53 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+labels:
+  template: apicast
+metadata:
+  annotations:
+    description: RHTE APIcast Routes
+  name: rhte-apicast-routes
+objects:
+- apiVersion: route.openshift.io/v1
+  kind: Route
+  metadata:
+    name: ${BASE_NAME}-${MAJOR_VERSION}-staging
+  spec:
+    host: ${BASE_NAME}-${MAJOR_VERSION}-staging.${WILDCARD_DOMAIN}
+    port:
+      targetPort: gateway
+    tls:
+      termination: edge
+      insecureEdgeTerminationPolicy: Allow
+    to:
+      kind: Service
+      name: apicast-staging
+     
+- apiVersion: route.openshift.io/v1
+  kind: Route
+  metadata:
+    name: ${BASE_NAME}-${MAJOR_VERSION}-production
+  spec:
+    host: ${BASE_NAME}-${MAJOR_VERSION}.${WILDCARD_DOMAIN}
+    port:
+      targetPort: gateway
+    tls:
+      termination: edge
+      insecureEdgeTerminationPolicy: Allow
+    to:
+      kind: Service
+      name: apicast-production
+     
+parameters:
+- description: The DNS domain under which APIs will be exposed
+  displayName: 3scale wildcard domain
+  name: WILDCARD_DOMAIN
+  required: true
+- description: 'The system_name of the API, converted to DNS ("_" -> "-")'
+  displayName: 3scale API Base Name
+  name: BASE_NAME
+  value: rhte-api
+  required: true
+- description: The API major version (1, 2, etc.)
+  displayName: 3scale API major version
+  name: MAJOR_VERSION
+  required: true

@@ -1,0 +1,11 @@
+[all:vars]
+ansible_connection=local
+
+[threescale]
+ah-3scale-ansible-admin.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com
+
+[threescale:vars]
+threescale_cicd_access_token=46ca1afb210333407e8fb151ea69fd9076a53aaff37996f4c0e0540816976242
+threescale_cicd_api_environment_name=test
+threescale_cicd_wildcard_domain=app.rhdp.ocp.cloud.lab.eng.bos.redhat.com
+
