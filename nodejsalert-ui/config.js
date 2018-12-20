@@ -1,7 +1,7 @@
 var config = {
 development: {
 
-
+    //mysql connection settings for development
     database: {
         host:   'localhost',
         user:   '',
@@ -17,7 +17,7 @@ development: {
 production: {
 
 
-    //mongodb connection settings
+    //mysql connection settings for production
     database: {
         host:   'mysql',
         user:   'dbuser',

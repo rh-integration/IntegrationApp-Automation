@@ -12,7 +12,7 @@ This example relies on the Fabric8 Maven plugin for its build configuration and 
 
 
 
-This is a Fuse Service that use SQL commponent to connect to a table in database, that reterieves particular user profile by providing the profile id and return out as a JSON format.
+This is a Fuse Service that use SQL component to connect to a table in database, that retrieves particular user profile by providing the profile id and return out as a JSON format.
 
   ![alt text](../images/service1.png "Fuse Service 1")
 

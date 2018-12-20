@@ -1,14 +1,16 @@
-# back-end Service 2
-## user Alert Service
+# Back-end Service 2
+## User alert service
 
 This demo demonstrates how to integrate a Spring-Boot application to an ActiveMQ broker and use JMS messaging between two Camel routes using OpenShift.
 
-In this example we will use two containers, one container to run as a ActiveMQ broker, and another as a client to the broker, where the Camel routes is running.
-
-### Backgorund
 
 
-This demo is a simple service which sent email alert and exposes an API endpoints,to send a alert by recieving input as a jason post request parameters. These content is later sent to a messaging broker, and then picked up by a bean, which simply process email paramets and returns a result of the email status. 
+### Background
+
+
+This service sends an email alert and exposes an API endpoints, by receiving input as JSON. This content is later sent to a messaging broker, and then picked up by a bean, which simply processes email parameters and returns a result of the email status.
+
+ 
 
 
   ![alt text](../images/Service2.png "Fuse Service 2")
@@ -24,6 +26,34 @@ The example can be built with
 The example can be run locally using the following Maven goal:
 
     mvn spring-boot:run
+
+
+url: 
+
+http://localhost:8080/cicd/alert
+
+post params :
+
+```json
+
+{
+  "alertType": "WEATHER",
+  "firstName": "test",
+  "date": "11/8/2019",
+  "phone": "1234567",
+  "email": "< with your email addresses >,
+  "description": "test alert service"
+}
+
+```
+
+
+Email Conifg:
+
+ - Update src/main/resources/application.yml with email server configuration.
+ - Insert your email credentials, we are using GMAIL as example.
+
+
 
 ### Running the example in OpenShift
 
