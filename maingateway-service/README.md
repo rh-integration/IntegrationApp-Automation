@@ -9,7 +9,7 @@ This example relies on the Fabric8 Maven plugin for its build configuration and 
 
 ## Background
 
-This is a Fuse service uses recipients component to call user service first by provinding user profile id and return out as a JSON parameters like, username, email etc and pass these parameters to alert service,to send alert email.
+This is a Fuse service uses recipients component to call user service first by providing user profile id and return out as a JSON parameters like, username, email etc and pass these parameters to alert service,to send alert email.
 
 
 

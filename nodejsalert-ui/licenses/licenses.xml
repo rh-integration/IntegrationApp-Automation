@@ -15,26 +15,6 @@
             </licenses>
         </dependency>
         <dependency>
-            <packageName>debug</packageName>
-            <version>2.6.9</version>
-            <licenses>
-                <license>
-                    <name>MIT License</name>
-                    <url>http://www.opensource.org/licenses/MIT</url>
-                </license>
-            </licenses>
-        </dependency>
-        <dependency>
-            <packageName>license-reporter</packageName>
-            <version>1.2.0</version>
-            <licenses>
-                <license>
-                    <name>Apache License 2.0</name>
-                    <url>http://www.apache.org/licenses/LICENSE-2.0</url>
-                </license>
-            </licenses>
-        </dependency>
-        <dependency>
             <packageName>cookie-parser</packageName>
             <version>1.4.3</version>
             <licenses>
@@ -45,18 +25,8 @@
             </licenses>
         </dependency>
         <dependency>
-            <packageName>http-errors</packageName>
-            <version>1.6.2</version>
-            <licenses>
-                <license>
-                    <name>MIT License</name>
-                    <url>http://www.opensource.org/licenses/MIT</url>
-                </license>
-            </licenses>
-        </dependency>
-        <dependency>
-            <packageName>jade</packageName>
-            <version>1.11.0</version>
+            <packageName>debug</packageName>
+            <version>2.6.9</version>
             <licenses>
                 <license>
                     <name>MIT License</name>
@@ -85,6 +55,36 @@
             </licenses>
         </dependency>
         <dependency>
+            <packageName>http-errors</packageName>
+            <version>1.6.2</version>
+            <licenses>
+                <license>
+                    <name>MIT License</name>
+                    <url>http://www.opensource.org/licenses/MIT</url>
+                </license>
+            </licenses>
+        </dependency>
+        <dependency>
+            <packageName>jade</packageName>
+            <version>1.11.0</version>
+            <licenses>
+                <license>
+                    <name>MIT License</name>
+                    <url>http://www.opensource.org/licenses/MIT</url>
+                </license>
+            </licenses>
+        </dependency>
+        <dependency>
+            <packageName>license-reporter</packageName>
+            <version>1.2.0</version>
+            <licenses>
+                <license>
+                    <name>Apache License 2.0</name>
+                    <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+                </license>
+            </licenses>
+        </dependency>
+        <dependency>
             <packageName>req-flash</packageName>
             <version>0.0.3</version>
             <licenses>
@@ -96,11 +96,21 @@
         </dependency>
         <dependency>
             <packageName>request</packageName>
-            <version>2.33.0</version>
+            <version>2.88.0</version>
             <licenses>
                 <license>
-                    <name>UNKNOWN</name>
-                    <url>UNKNOWN</url>
+                    <name>Apache License 2.0</name>
+                    <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+                </license>
+            </licenses>
+        </dependency>
+        <dependency>
+            <packageName>serve-favicon</packageName>
+            <version>2.5.0</version>
+            <licenses>
+                <license>
+                    <name>MIT License</name>
+                    <url>http://www.opensource.org/licenses/MIT</url>
                 </license>
             </licenses>
         </dependency>

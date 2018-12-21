@@ -41,36 +41,21 @@ activemq:
      max:
       connections: 8
 
-
-
-
 # email configuration
 # use name : user email
 # password : user email password
 
 
-spring:
- mail:
-    host: smtp.gmail.com
-    port: 587
-    username: xxx@gmail.com
-    password: 
-    protocol: smtp
-    tls: true
-    properties.mail.smtp:
-        auth: true
-        starttls.enable: true
-        ssl.trust: smtp.gmail.com
+mail.from: 
+mail.smtp.host: smtp.gmail.com
+mail.port: 587
+mail.user: 
+mail.passsword: 
 
+mail.tls: true 
+ssl.trust: true   
+mail.smtp.auth: true
+mail.ssl.trust: smtp.gmail.com
 
+ 
 
-
-
-
-
-mailFrom: xxx@gmail.com
-
-
-
-  
-  

@@ -9,7 +9,7 @@ public class AlertMessage {
 		switch (alertType) {
 
 		case ACCIDENT:
-			messageBody = " This service will alert to accident infromation can be used by traffic police department to inform about accident ";
+			messageBody = " This service will alert to accident information could be used by traffic police department to tell about accident ";
 			break;
 		case ADVERTISEMENT:
 			messageBody = "  Alert message about advertisement";
@@ -18,13 +18,13 @@ public class AlertMessage {
 			messageBody = "  Alert message about appointment schedule";
 			break;
 		case MAILBOX:
-			messageBody = "  Alert message about delievry or mail box ";
+			messageBody = "   Alert message about delivery or mail box ";
 			break;
 		case TRANSACTION:
 			messageBody = "  Alert message about transaction";
 			break;
 		case WEATHER:
-			messageBody = " This will alert about weather condition specfice to user address ";
+			messageBody = " This will alert about weather condition specific to user address ";
 			break;
 		default:
 			messageBody = " Service alert message ";

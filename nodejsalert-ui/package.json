@@ -70,20 +70,20 @@
   },
   "dependencies": {
     "body-parser": "^1.18.2",
-    "debug": "~2.6.9",
-    "license-reporter": "^1.2.0",
+    "config": "^1.30.0",
     "cookie-parser": "~1.4.3",
-    "http-errors": "~1.6.2",
-    "jade": "~1.11.0",
-    "monk": "^6.0.5",
-    "morgan": "~1.9.0",
-    "mysql": "^2.15.0",
+    "debug": "~2.6.9",
     "ejs": "^2.6.1",
     "express": "^4.16.3",
     "express-fileupload": "^0.4.0",
+    "http-errors": "~1.6.2",
+    "jade": "~1.11.0",
+    "license-reporter": "^1.2.0",
+    "monk": "^6.0.5",
+    "morgan": "~1.9.0",
+    "mysql": "^2.15.0",
     "req-flash": "0.0.3",
-    "request": "~2.33.0",
-    "config": "^1.30.0",
-    "serve-favicon": "~2.3.0"
+    "request": "^2.88.0",
+    "serve-favicon": "^2.5.0"
   }
 }

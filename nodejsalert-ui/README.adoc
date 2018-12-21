@@ -1,10 +1,29 @@
 = Node.js WebApp
 
-IMPORTANT: This booster requires Node.js 8.x or greater and `npm` 5 or greater.
+The is sample web application that makes its calls through the 3scale API gateway, to send alert notification, and using my SQL database same as Fuse User Service to get list of users.
 
 
 
-== Runing the App Locally
+== Prerequisites Configuration
+
+- update config.js parameters as per environment:
+
+```yaml
+database: {
+host: 'localhost',
+user: '<db user name>',
+password: '<db password>',
+database: 'sampledb'
+},
+//3scale details
+threescale: {
+url: '<3scale-gateway url> example  https://****-****-**/cicd/maingateway/',
+token: '<3scale Token>
+}
+
+```
+
+== Running the App Locally
 
 To run this booster on your local host:
 
@@ -13,7 +32,7 @@ To run this booster on your local host:
 - $ npm install && npm start
 - http://localhost:8080/
 
- ![alt text](../images/nodejsui.png "web application")
+![Application View](images/application_launch_view.png "Application View")
 
 == Running the Booster on a Single-node OpenShift Cluster
 If you have a single-node OpenShift cluster, such as Minishift or Red Hat Container Development Kit, link:http://launcher.fabric8.io/docs/minishift-installation.html[installed and running], you can also deploy your booster there. A single-node OpenShift cluster provides you with access to a cloud environment that is similar to a production environment.
@@ -30,5 +49,4 @@ $ npm install && npm run openshift
 
 == More Information
 You can learn more about this booster and rest of the Node.js runtime in the link:http://launcher.fabric8.io/docs/nodejs-runtime.html[Node.js Runtime Guide].
-
 
