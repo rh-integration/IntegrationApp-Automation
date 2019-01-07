@@ -45,15 +45,109 @@ This demo contains below applications.
     • Node.js Web application https://github.com/redhatHameed/3ScaleFuseAMQ/tree/master/nodejsalert-ui
     • 3scale (Openshift on-premises) environment
 
-### Automation of Applications in OpenShift.
+## Automation of Applications in OpenShift
+### Build and deploy with pipelines
+***The application works under [OpenShift](https://www.okd.io/) or [Minishift](https://www.okd.io/minishift/)***
 
-TODO: -The below deployment will be achieved using Jenkins Pipelines CICD approach.
+The following instructions assuming that you are using OpenShift. But the same could be applied to Minishift as well.
 
-     • Deploying application to DEV Environment.
-     • Deploying application from DEV to UAT Environment.
-     • Deploying application in Prod Environment.
-     • Deploying application to Prod DR Environment.
-     • Publishing API’s in 3scale : (By using Operator or ansible playbooks).
+Download the source codes from git repository by either forking, or simply cloning it. 
+
+```
+git clone https://github.com/RHsyseng/IntegrationApp-Automation.git  
+```
+Assume you have OpenShift cluster ready and running.
+
+```
+# login to the OpenShift
+oc login <OpenShift cluster url> --token=<OpenShift user login token>
+
+```
+
+Setup `rh-dev`, `rh-test` and `rh-prod` OpenShift projects as the target environment (you may skip this step if you already have the environment ready, and this script will first delete the original projects in OpenShift and create the new ones).
+    
+```
+./setup/setup.sh
+```
+If you run the above setup.sh, the pipelines are automatically imported. In case you want to further customize the pipelines, please follow the instructions below.
+
+You can also customize the pipelines by changing their parameters.  Different templates have different parameters but they are all listed below:
+```
+Parameters           Default                            Explanations
+GIT_REPO             https://github.com/RHsyseng/IntegrationApp-Automation.git
+GIT_BRANCH           master                             #git branch where you want to build
+OPENSHIFT_HOST       <leave it for now, will be used in future release>
+OPENSHIFT_TOKEN      <leave it for now, will be used in future release>
+DEV_PROJECT          rh-dev                
+TEST_PROJECT         rh-test
+PROD_PROJECT         rh-prod
+MYSQL_USER           dbuser                             #your DB user account
+MYSQL_PWD            password                           #DB user password
+IMAGE_REGISTRY       docker-registry.default.svc:5000   #image registry, typically the docker registry service of your OpenShift environment
+IMAGE_NAMESPACE      rh-dev                             #the OpenShift project/namespace where you built and pushed the image
+
+* If you have customized MYSQL_USER or MYSQL_PWD, please edit the nodejsalert-ui/config.js accordingly.
+
+```
+To list the parameters of each template:
+```
+# list for fisuser-service pipeline
+oc process --parameters -f fisuser-service/src/main/resources/pipeline-app-build.yml
+
+# list for maingateway-service pipeline
+oc process --parameters -f  maingateway-service/src/main/resources/pipeline-app-build.yml
+
+# list for nodejsalert-ui pipeline
+oc process --parameters -f  nodejsalert-ui/resources/pipeline-app-build.yml
+
+# list for fisalert-service pipeline
+oc process --parameters -f  fisalert-service/src/main/resources/pipeline-app-build.yml
+
+# list for aggregated-pipeline
+oc process --parameters -f  pipelinetemplates/pipeline-aggregated-build.yml
+
+```
+
+To replace the existing pipelines with your customized pipelines:
+```
+# switch to rh-dev project
+oc project rh-dev
+
+# Remove the exisiting pipeline that you want to customize.
+oc delete bc fisuser-service-pipeline
+oc delete bc maingateway-service-pipeline
+oc delete bc nodejsalert-ui-pipeline
+oc delete bc fisalert-service-pipeline
+oc delete bc aggregated-pipeline
 
 
+# import fisuser-service pipeline
+oc new-app -f fisuser-service/src/main/resources/pipeline-app-build.yml -p IMAGE_REGISTRY=docker-registry.default.svc:5000 -p IMAGE_NAMESPACE=rh-dev -p DEV_PROJECT=rh-dev -p TEST_PROJECT=rh-test -p PROD_PROJECT=rh-prod
+
+# import maingateway-service pipeline
+oc new-app -f maingateway-service/src/main/resources/pipeline-app-build.yml -p IMAGE_REGISTRY=docker-registry.default.svc:5000 -p IMAGE_NAMESPACE=rh-dev -p DEV_PROJECT=rh-dev -p TEST_PROJECT=rh-test -p PROD_PROJECT=rh-prod
+
+# import nodejsalert-ui pipeline
+oc new-app -f nodejsalert-ui/resources/pipeline-app-build.yml -p IMAGE_REGISTRY=docker-registry.default.svc:5000 -p IMAGE_NAMESPACE=rh-dev -p DEV_PROJECT=rh-dev -p TEST_PROJECT=rh-test -p PROD_PROJECT=rh-prod
+
+# import fisalert-service pipeline
+oc new-app -f fisalert-service/src/main/resources/pipeline-app-build.yml -p IMAGE_REGISTRY=docker-registry.default.svc:5000 -p IMAGE_NAMESPACE=rh-dev -p DEV_PROJECT=rh-dev -p TEST_PROJECT=rh-test -p PROD_PROJECT=rh-prod
+
+# import aggregated-pipeline
+oc new-app -f pipelinetemplates/pipeline-aggregated-build.yml -p IMAGE_REGISTRY=docker-registry.default.svc:5000 -p IMAGE_NAMESPACE=rh-dev -p DEV_PROJECT=rh-dev -p TEST_PROJECT=rh-test -p PROD_PROJECT=rh-prod
+
+```
+
+After you have imported all of the pipeline templates, you should have them under `Builds`, `Pipelines` of the selected OpenShift project.
+
+![Pipeline View](images/pipeline_import_view.png "Pipeline View")
+
+Please start the pipeline from `maingateway-service-pipeline`, `fisuser-service-pipeline`, `fisalert-service-pipeline`, and then `nodejsalert-ui-pipeline`.
+
+With `aggregated-pipeline`, you can build the entire application including all of the above modules mentioned. If you choose this pipeline, by default, it will build the entire application, but you will also be asked to select which individual module you want to bulid.  You will need to make your selection in your Jenkins console.
+
+Once the build is finished, in your OpenShift, go to `rh-test` or `rh-prod`, nevigate to `Applications`, `Routes` and click on nodejsalert-ui URL to launch the application.
+You should see the application and it is started with web front-end like this: 
+
+![Application View](images/application_launch_view.png "Application View")
 
