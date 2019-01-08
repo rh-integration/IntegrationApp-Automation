@@ -17,13 +17,20 @@ pipeline {
         string (defaultValue: 'master', name:'GIT_BRANCH', description:'Git branch in the source git')
         string (defaultValue: 'dbuser', name:'MYSQL_USER', description:'My Sql user name')
         string (defaultValue: 'password', name:'MYSQL_PWD', description:'My Sql user password')
+        booleanParam (defaultValue: false, name:'SELECT_BUILD_MODULE', description:'Select module to build (default: build all to dev and test)')
+        booleanParam (defaultValue: false, name:'SELECT_DEPLOY_TO_PROD', description:'Approval to deploy to Production (default: no deployment to production')
     }
     stages {
         stage('Wait for user to select module to build.') {
+            when {
+              expression {
+                  params.SELECT_BUILD_MODULE == true
+              }
+            }
             steps {
                 script {
                     try {
-                        timeout (time:600, unit:'SECONDS') {
+                        timeout (time:180, unit:'SECONDS') {
                             env.userSelModule = input(id: 'userInput', message: 'Please select which module to bulid?',
                             parameters: [[$class: 'ChoiceParameterDefinition', defaultValue: 'strDef', 
                                description:'describing choices', name:'nameChoice', choices: "Gateway\nFisUser\nFisAlert\nUI\nAll"]
@@ -48,7 +55,7 @@ pipeline {
             }
             when {
                 expression {
-                    env.userSelModule == 'Gateway' || env.userSelModule == 'All'
+                    env.userSelModule == 'Gateway' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false
                 }
             }
             steps {
@@ -66,7 +73,7 @@ pipeline {
             }
             when {
                 expression {
-                    env.userSelModule == 'FisUser' || env.userSelModule == 'All'
+                    env.userSelModule == 'FisUser' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false
                 }
             }
             steps {
@@ -83,7 +90,7 @@ pipeline {
             }
             when {
                 expression {
-                    env.userSelModule == 'FisAlert' || env.userSelModule == 'All'
+                    env.userSelModule == 'FisAlert' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false
                 }
             }
             steps {
@@ -100,7 +107,7 @@ pipeline {
             }
             when {
                 expression {
-                    env.userSelModule == 'UI' || env.userSelModule == 'All'
+                    env.userSelModule == 'UI' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false
                 }
             }
             steps {
@@ -128,7 +135,7 @@ pipeline {
            }
            when {
                expression {
-                   env.userSelModule == 'Gateway' || env.userSelModule == 'All'
+                   env.userSelModule == 'Gateway' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false
                }
            }
            steps {
@@ -144,7 +151,7 @@ pipeline {
             }
            when {
                expression {
-                   env.userSelModule == 'FisUser' || env.userSelModule == 'All'
+                   env.userSelModule == 'FisUser' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false
                }
            }
             steps {
@@ -161,7 +168,7 @@ pipeline {
             }
            when {
                expression {
-                   env.userSelModule == 'FisAlert' || env.userSelModule == 'All'
+                   env.userSelModule == 'FisAlert' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false
                }
            }
             steps {
@@ -177,7 +184,7 @@ pipeline {
             }
            when {
                expression {
-                   env.userSelModule == 'UI' || env.userSelModule == 'All'
+                   env.userSelModule == 'UI' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false
                }
            }
             steps {
@@ -187,20 +194,23 @@ pipeline {
             }
         }
         stage('Wait for user to select module to push to production.') {
+            when {
+                expression {
+                    params.SELECT_DEPLOY_TO_PROD == true && params.SELECT_BUILD_MODULE == true
+                }
+            }   
             steps {
                 script {
                     try {
-                        timeout (time:2, unit:'DAYS') {
-                            env.userSelModule = input(id: 'userInput', message: 'Please select module to push to production?',
-                            parameters: [[$class: 'ChoiceParameterDefinition', defaultValue: 'strDef', 
-                               description:'describing choices', name:'nameChoice', choices: "Gateway\nFisUser\nFisAlert\nUI\nAll"]
-                            ])
+                        timeout (time:2, unit:'HOURS') {
+                            env.userProdApproval = input(id: 'userInput', message: "Do you approvel this build to promote to production? Selected build [" +  env.userSelModule + "]?")
+                            env.userProdApproval = 'Approved'
                         } 
                     } catch (exception) {
-                      env.userSelModule='---'    
+                      env.userProdApproval='---'    
                     }
         
-                    println("User selected module " + env.userSelModule);
+                    println("User approval to production " + env.userProdApproval);
                 }
             }
         }
@@ -211,11 +221,11 @@ pipeline {
             }
             when {
                 expression {
-                    env.userSelModule == 'Gateway' || env.userSelModule == 'All'
+                    env.userProdApproval == 'Approved' && (env.userSelModule == 'Gateway' || env.userSelModule == 'All')
                 }
             }
             steps {
-                echo 'Deploy to ${PROD_PROJECT} '
+                echo "Deploy to ${PROD_PROJECT} "
                 
                 promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'maingateway-service',params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.PROD_PROJECT)
                 promoteService(params.IMAGE_NAMESPACE, params.PROD_PROJECT, 'maingateway-service',  env.srcTag, env.destTag)
@@ -228,7 +238,7 @@ pipeline {
             }
             when {
                 expression {
-                    env.userSelModule == 'fisUser' || env.userSelModule == 'All'
+                    env.userProdApproval == 'Approved' && (env.userSelModule == 'FisUser' || env.userSelModule == 'All')
                 }
             }
             steps {
@@ -245,7 +255,7 @@ pipeline {
             }
             when {
                 expression {
-                    env.userSelModule == 'FisAlert' || env.userSelModule == 'All'
+                    env.userProdApproval == 'Approved' && (env.userSelModule == 'FisAlert' || env.userSelModule == 'All')
                 }
             }
             steps {
@@ -261,7 +271,7 @@ pipeline {
             }
             when {
                 expression {
-                    env.userSelModule == 'UI' || env.userSelModule == 'All'
+                    env.userProdApproval == 'Approved' && (env.userSelModule == 'UI' || env.userSelModule == 'All')
                 }
             }
             steps {
