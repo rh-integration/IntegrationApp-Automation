@@ -35,7 +35,7 @@ activemq:
 # The following properties can be customized using the 'ACTIVEMQ_SERVICE_HOST' and 'ACTIVEMQ_SERVICE_PORT' environment variables.
 # This is indeed done automatically by Kubernetes when the application is deployed in a namespace containing an instance of ActiveMQ named 'activemq'.
 # The service defaults to localhost. You need to change these properties for development purposes only.
-    host: broker-amq-tcp.cicddemo.svc
+    host: broker-amq-tcp
     port: 61616
   broker: 
     username: admin

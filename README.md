@@ -39,10 +39,10 @@ An integration application consisting of Multiple services working in combinatio
 
 This demo contains below applications.
 
-    • Gateway application https://github.com/redhatHameed/3ScaleFuseAMQ/tree/master/maingateway-service 
-    • User Service application https://github.com/redhatHameed/3ScaleFuseAMQ/tree/master/fisuser-service
-    • Alert Service Application https://github.com/redhatHameed/3ScaleFuseAMQ/tree/master/fisalert-service
-    • Node.js Web application https://github.com/redhatHameed/3ScaleFuseAMQ/tree/master/nodejsalert-ui
+    • Gateway application https://github.com/RHsyseng/IntegrationApp-Automation/tree/master/maingateway-service 
+    • User Service application https://github.com/RHsyseng/IntegrationApp-Automation/tree/master/fisuser-service
+    • Alert Service Application https://github.com/RHsyseng/IntegrationApp-Automation/tree/master/fisalert-service
+    • Node.js Web application https://github.com/RHsyseng/IntegrationApp-Automation/tree/master/nodejsalert-ui
     • 3scale (Openshift on-premises) environment
 
 ## Automation of Applications in OpenShift
@@ -119,6 +119,8 @@ oc delete bc maingateway-service-pipeline
 oc delete bc nodejsalert-ui-pipeline
 oc delete bc fisalert-service-pipeline
 oc delete bc aggregated-pipeline
+oc delete bc publish-api-3scale
+
 
 
 # import fisuser-service pipeline
@@ -136,7 +138,14 @@ oc new-app -f fisalert-service/src/main/resources/pipeline-app-build.yml -p IMAG
 # import aggregated-pipeline
 oc new-app -f pipelinetemplates/pipeline-aggregated-build.yml -p IMAGE_REGISTRY=docker-registry.default.svc:5000 -p IMAGE_NAMESPACE=rh-dev -p DEV_PROJECT=rh-dev -p TEST_PROJECT=rh-test -p PROD_PROJECT=rh-prod
 
+# import 3scale pipeline
+oc new-app -f cicd-3scale/groovy-scripts/pipeline-template.yaml -p API_BACK_END=http://maingateway-service-rh-dev.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com -p END_POINT=https://fusecicd-apicast-staging.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com -p SANDBOX_END_POINT=https://fusecicd-apicast-staging.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com -p THREESCALE_URL=https://ah-3scale-ansible-admin.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com -p API_TOKEN=4a2a1ce5f6a7c5f6a67234d84f647f68b690e4931429d93c65e2bdf63a6a406f
+
+
 ```
+
+
+
 
 After you have imported all of the pipeline templates, you should have them under `Builds`, `Pipelines` of the selected OpenShift project.
 

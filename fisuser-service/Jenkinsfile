@@ -36,6 +36,21 @@ pipeline {
 
             }
         }
+	stage('Smoke Test') {
+         steps {
+
+	  script {
+
+		serviceName = 'fisuser-service'
+		smokeTestOperation='cicd/user/profile/11111'
+		makeGetRequest("http://${serviceName}/${smokeTestOperation}")
+	  }
+
+ 		
+	}
+		
+   	}
+
         stage('Pushing to Test') {
             environment {
                 srcTag = 'latest'
@@ -108,4 +123,24 @@ def deploy(folderName, projName, openShiftHost, openShiftToken, mysqlUser, mysql
 
     mvn fabric8:deploy -Dmaven.test.skip=true -Dmysql-service-username=${mysqlUser} -Dmysql-service-password=${mysqlPwd}
     """
+}
+
+def makeGetRequest(url) {
+
+	println('service...'+url);
+
+	def get = new URL(url).openConnection();
+	get.setDoOutput(true)
+
+	get.setRequestProperty('Accept', 'application/json')
+	
+	def responseCode = get.getResponseCode();
+	if (responseCode != 200 && responseCode != 201) {
+		println('Failed. HTTP response: ' + responseCode)
+		println(get.getInputStream().getText());
+		assert false
+	} else {
+		println('Teste successfully!')
+	       
+	}
 }

@@ -37,6 +37,31 @@ pipeline {
                 }
             }
         }
+
+/////////////////////////////////////smoke test//////////////////////////////////////////////////////////
+
+
+
+stage('Smoke Test') {
+         steps {
+
+	  script {
+
+		serviceName = 'nodejsalert-ui'
+	        makeGetRequest("http://${serviceName}:8080")
+
+	  }
+
+ 		
+	}
+		
+   	}
+
+///////////////////////////////////////end of smoke test////////////////////////////////////////////////
+
+
+
+
         stage('Pushing to Test') {
             environment {
                 srcTag = 'latest'
@@ -86,5 +111,25 @@ def promoteService (imageNamespace, projName, svcName, sourceTag, destinationTag
   			     deploymentConfig: svcName,
 			     waitTime: '300000')
 
+}
+
+def makeGetRequest(url) {
+
+	println('service...'+url);
+
+	def get = new URL(url).openConnection();
+	get.setDoOutput(true)
+
+	get.setRequestProperty('Accept', 'application/json')
+	
+	def responseCode = get.getResponseCode();
+	if (responseCode != 200 && responseCode != 201) {
+		println('Failed. HTTP response: ' + responseCode)
+		println(get.getInputStream().getText());
+		assert false
+	} else {
+		println('Teste successfully!')
+	       
+	}
 }
 

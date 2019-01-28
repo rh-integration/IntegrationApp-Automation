@@ -34,6 +34,20 @@ pipeline {
 
             }
         }
+    stage('Smoke Test') {
+         steps {
+
+	  script {
+
+	        serviceName = 'maingateway-service'
+		smokeTestOperation='cicd/maingateway/profile/11111?alertType=ACCIDENT'
+		makeGetRequest("http://${serviceName}/${smokeTestOperation}")
+
+
+	  }
+	}
+		
+   	}
         stage('Pushing to Test') {
             environment {
                 srcTag = 'latest'
@@ -102,4 +116,24 @@ def deploy(folderName, projName, openShiftHost, openShiftToken) {
 
     mvn fabric8:deploy -Dmaven.test.skip=true
     """
+}
+
+def makeGetRequest(url) {
+
+	println('service...'+url);
+
+	def get = new URL(url).openConnection();
+	get.setDoOutput(true)
+
+	get.setRequestProperty('Accept', 'application/json')
+	
+	def responseCode = get.getResponseCode();
+	if (responseCode != 200 && responseCode != 201) {
+		println('Failed. HTTP response: ' + responseCode)
+		println(get.getInputStream().getText());
+		assert false
+	} else {
+		println('Teste successfully!')
+	       
+	}
 }
