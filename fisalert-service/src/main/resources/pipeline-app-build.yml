@@ -11,7 +11,7 @@ parameters:
   value: https://github.com/RHsyseng/IntegrationApp-Automation.git
   required: true
 - name: GIT_BRANCH
-  value: master
+  value: master 
   required: true
 - name: DEV_PROJECT 
   required: true
