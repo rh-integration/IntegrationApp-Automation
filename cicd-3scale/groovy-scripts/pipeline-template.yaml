@@ -1,0 +1,105 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+labels:
+  template: pipeline-publish-api-3scale
+metadata:
+  annotations:
+    description: 3scale API publishing Pipeline
+  name: publish-api-3scale
+objects:
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    labels:
+      name: publish-api-3scale
+    name: publish-api-3scale
+  spec:
+    output: null
+    postCommit: null
+    resources: null
+    runPolicy: Serial
+    source:
+      type: None
+    source:
+      git:
+        uri: ${GIT_REPO}
+        ref: ${GIT_BRANCH}
+    strategy:
+      type: JenkinsPipeline
+      jenkinsPipelineStrategy:
+        jenkinsfilePath: cicd-3scale/groovy-scripts/Jenkinsfile
+        env:
+        - name: GIT_BRANCH
+          value: ${GIT_BRANCH}
+        - name: GIT_REPO
+          value: ${GIT_REPO}
+        - name: API_BACK_END
+          value: ${API_BACK_END}
+        - name: END_POINT
+          value: ${END_POINT}
+        - name: SANDBOX_END_POINT
+          value: ${SANDBOX_END_POINT}
+        - name: OPENSHIFT_SERVICE_NAME
+          value: ${OPENSHIFT_SERVICE_NAME}
+        - name: THREESCALE_URL
+          value: ${THREESCALE_URL}
+        - name: API_TOKEN
+          value: ${API_TOKEN}
+        - name: MAJOR_VERSION
+          value: ${MAJOR_VERSION}
+        - name: SWAGGER_FILE_NAME
+          value: ${SWAGGER_FILE_NAME}
+       
+parameters:
+- name: GIT_REPO
+  value: https://github.com/RHsyseng/IntegrationApp-Automation.git
+  required: true
+- name: GIT_BRANCH
+  value: master
+  required: true
+- name: API_BACK_END
+  value: http://maingateway-service-ah-dev2.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com
+  required: true
+- name: END_POINT
+  value: https://fusecicd-apicast-staging.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com
+  required: true
+- name: SANDBOX_END_POINT
+  value: https://fusecicd-apicast-staging.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com
+  required: true
+- name: SWAGGER_FILE_NAME
+  displayName: SWAGGER_FILE_NAME
+  required: true
+  value: https://raw.githubusercontent.com/RHsyseng/IntegrationApp-Automation/master/cicd-3scale/groovy-scripts/openapi-spec.json
+  description: SWAGGER_FILE_NAME for 3Scale env
+- name: OPENSHIFT_SERVICE_NAME
+  value: 3scalefuse
+  required: true
+- name: THREESCALE_URL
+  displayName: Admin URL of Threescale
+  required: true
+  value: https://ah-3scale-ansible-admin.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com
+  description: Admin URL of Threescale
+- name: API_TOKEN
+  displayName: Access token from 3scale 
+  required: true
+  value: 4a2a1ce5f6a7c5f6a67234d84f647f68b690e4931429d93c65e2bdf63a6a406f
+  description: Access token from 3scale for calling management API
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
