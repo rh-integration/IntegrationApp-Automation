@@ -18,7 +18,7 @@ pipeline {
         string (defaultValue: 'dbuser', name:'MYSQL_USER', description:'My Sql user name')
         string (defaultValue: 'password', name:'MYSQL_PWD', description:'My Sql user password')
         booleanParam (defaultValue: false, name:'SELECT_BUILD_MODULE', description:'Select module to build (default: build all to dev and test)')
-        booleanParam (defaultValue: false, name:'SELECT_DEPLOY_TO_PROD', description:'Approval to deploy to Production (default: no deployment to production')
+        booleanParam (defaultValue: false, name:'SELECT_DEPLOY_TO_PROD', description:'Approval to deploy to Production (default: no deployment to production)')
     }
     stages {
         stage('Wait for user to select module to build.') {
