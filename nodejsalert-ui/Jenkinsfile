@@ -72,6 +72,31 @@ pipeline {
                 promoteService(params.IMAGE_NAMESPACE, params.PROD_PROJECT, env.MODULE_NAME + "-" + params.SERVICE_VERSION)
             }
         }
+
+/////////////////////////////////////smoke test//////////////////////////////////////////////////////////
+
+
+
+stage('Smoke Test') {
+         steps {
+
+	  script {
+
+		serviceName = 'nodejsalert-ui'
+	        makeGetRequest("http://${serviceName}:8080")
+
+	  }
+
+ 		
+	}
+		
+   	}
+
+///////////////////////////////////////end of smoke test////////////////////////////////////////////////
+
+
+
+
         stage('Pushing to Test') {
             when {
               expression {
@@ -172,5 +197,25 @@ def promoteService (imageNamespace, projName, dcName) {
              }
          }
      }//script
+}
+
+def makeGetRequest(url) {
+
+	println('service...'+url);
+
+	def get = new URL(url).openConnection();
+	get.setDoOutput(true)
+
+	get.setRequestProperty('Accept', 'application/json')
+	
+	def responseCode = get.getResponseCode();
+	if (responseCode != 200 && responseCode != 201) {
+		println('Failed. HTTP response: ' + responseCode)
+		println(get.getInputStream().getText());
+		assert false
+	} else {
+		println('Teste successfully!')
+	       
+	}
 }
 
