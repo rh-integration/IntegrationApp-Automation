@@ -34,6 +34,27 @@ pipeline {
 
             }
         }
+
+
+	stage('Smoke Test') {
+         steps {
+
+	  script {
+
+	      
+		serviceName = 'fisalert-service'
+		smokeTestOperation='cicd/alert'
+		body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
+		makePostRequest("http://${serviceName}/${smokeTestOperation}", body,'POST')
+
+		
+
+	  }
+
+ 		
+	}
+		
+   	}
         stage('Pushing to Test') {
             environment {
                 srcTag = 'latest'
@@ -116,3 +137,27 @@ def deploy(folderName, projName, openShiftHost, openShiftToken) {
     mvn fabric8:deploy -Dmaven.test.skip=true
     """
 }
+
+def makePostRequest(url, body, method) {
+
+	println('service url...'+url);
+	println('post body...'+body)
+
+	def post = new URL(url).openConnection();
+	post.setRequestMethod(method)
+	post.setDoOutput(true)
+	post.setRequestProperty('Content-Type', 'application/json')
+	post.setRequestProperty('Accept', 'application/json')
+	post.getOutputStream().write(body.getBytes('UTF-8'))
+	def responseCode = post.getResponseCode();
+	if (responseCode != 200 && responseCode != 201) {
+		println('Failed. HTTP response: ' + responseCode)
+		println(post.getInputStream().getText());
+		assert false
+	} else {
+		println('Tested successfully!')
+		println(post.getInputStream().getText());
+
+	}
+}
+

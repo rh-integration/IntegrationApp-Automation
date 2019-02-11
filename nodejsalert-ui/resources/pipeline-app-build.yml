@@ -11,7 +11,7 @@ parameters:
   value: https://github.com/RHsyseng/IntegrationApp-Automation.git
   required: true
 - name: GIT_BRANCH
-  value: master
+  value: master 
   required: true
 - name: DEV_PROJECT 
   required: true
@@ -24,6 +24,9 @@ parameters:
   required: true
 - name: IMAGE_NAMESPACE 
   required: true
+- name: SERVICE_VERSION 
+  value: rel1.2
+  required: false 
 objects:
 - apiVersion: v1
   kind: BuildConfig
@@ -61,3 +64,5 @@ objects:
           value: ${IMAGE_NAMESPACE}
         - name: IMAGE_REGISTRY 
           value: ${IMAGE_REGISTRY}
+        - name: SERVICE_VERSION 
+          value: ${SERVICE_VERSION}
