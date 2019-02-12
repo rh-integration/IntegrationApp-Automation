@@ -165,6 +165,13 @@ def promoteBlueGreenServiceSetup(openShiftHost, openShiftToken, svcName, registr
 }
 def promoteServiceSetup(openShiftHost, openShiftToken, svcName, registry, imageNameSpace, tagName, projName) {
     try {
+        sh """
+            oc delete dc ${svcName} -n ${projName} 2> /dev/null
+        """
+    } catch (Exception e) {
+        echo "skip dc/svc/route cleanup related exception, the resource may not exist. " + e.getMessage();
+    }
+    try {
         sh """ 
             oc create dc ${svcName} --image=${registry}/${imageNameSpace}/${svcName}:${tagName} -n ${projName} 2> /dev/null 
             oc env dc ${svcName} APP_NAME=${svcName} -n ${projName} 2> /dev/null

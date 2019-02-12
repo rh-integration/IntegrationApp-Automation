@@ -144,9 +144,6 @@ oc new-app -f cicd-3scale/groovy-scripts/pipeline-template.yaml -p API_BACK_END=
 
 ```
 
-
-
-
 After you have imported all of the pipeline templates, you should have them under `Builds`, `Pipelines` of the selected OpenShift project.
 
 ![Pipeline View](images/pipeline_import_view.png "Pipeline View")
@@ -159,6 +156,16 @@ Once the build is finished, in your OpenShift, go to `rh-test` or `rh-prod`, nev
 You should see the application and it is started with web front-end like this: 
 
 ![Application View](images/application_launch_view.png "Application View")
+
+### Jenkins plugin setup & In-process Script Approval
+
+Before running `3scale API publishing Pipeline (publish-api-3scale)`, please read the following instructions.
+
+1) If you have your 3Scale server which HTTPS is enabled with self-signed certificate. Please install "skip-certificate-check" plugin so that Jenkins will skip validating HTTPS certificate.  Jenkins pipeline will fail without this plugin.  However, if you have CA signed certificate, you don't need to install this plugin.
+
+   To install "skip-certificate-check", go to "Manage Jenkins", "Manage Plugins", In Filter box, search and then select "skip-certificate-check", then click on "Install without restart".  In the installing page, check the "Restart Jenkins when Installation is complete and no jobs are running" checkbox, and wait for the installation and restart to complete.  We suggest you to use persistent storage enabled Jenkins pod so that you only need to do this installation once.
+
+2) In Jenkins 2, running script in pipeline are subject to script security check (this pipeline was developed with Groovy script), and the script has to be approved before it is allowed to run.  When you start to run `3scale API publishing Pipeline`, you mostly will encounter "Scripts not permitted to use method ... " exceptions. If this happens, please login Jenkins as an administrator, go to "Manage Jenkins", "In-process Script Approval" page to approval the script.  You may need to do the approval multiple times as we found that Jenkins does the check on method level.  You only need to approve once on all those methods during the first run.  We suggest you to use persistent storage enabled Jenkins pod so that your approvals can be saved and reloaded if pod is restarted.
 
 ### Deploy with BlueGreen Deployment Strategy
 
