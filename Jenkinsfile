@@ -337,28 +337,41 @@ def setEnvForDBModule(openShiftHost, openShiftToken, svcName, projName, mysqlUse
 }
 def promoteServiceSetup(openShiftHost, openShiftToken, svcName,registry,imageNameSpace, tagName, projName) {
     try {
-    sh """ 
-        oc create dc ${svcName} --image=${registry}/${imageNameSpace}/${svcName}:${tagName} -n ${projName} 2> /dev/null  
-        oc deploy ${svcName} --cancel -n ${projName} 2> /dev/null 
-        oc expose dc ${svcName} --port=8080 -n ${projName} 2> /dev/null 
-        oc expose svc ${svcName} --name=${svcName} -n ${projName} 2> /dev/null 
-    """
+        sh """
+            oc delete dc ${svcName} -n ${projName} 2> /dev/null
+        """
+    } catch (Exception e) {
+        echo "skip dc/svc/route cleanup related exception, the resource may not exist. " + e.getMessage();
+    }
+    try {
+        sh """ 
+            oc create dc ${svcName} --image=${registry}/${imageNameSpace}/${svcName}:${tagName} -n ${projName} 2> /dev/null     
+            oc env dc ${svcName} APP_NAME=${svcName} -n ${projName} 2> /dev/null 
+            oc deploy ${svcName} --cancel -n ${projName} 2> /dev/null 
+            oc expose dc ${svcName} --port=8080 -n ${projName} 2> /dev/null 
+            oc expose svc ${svcName} --name=${svcName} -n ${projName} 2> /dev/null 
+        """
     } catch (Exception e) {
       echo "skip dc/svc/route creation related exception, the resource may already exist. " + e.getMessage();
     }
 
 }
 def promoteService (imageNamespace, projName, svcName, sourceTag, destinationTag) {
-    openshiftTag(namespace: imageNamespace,
-                  srcStream: svcName,
-                  srcTag: sourceTag,
-                  destStream: svcName,
-                  destTag: destinationTag)
-
-    openshiftDeploy(namespace: projName,
-  			     deploymentConfig: svcName,
-			     waitTime: '300000')
-
+    script {
+         openshift.withCluster() {
+             openshift.withProject( imageNamespace ) {
+                 echo "tagging the build for ${projName} ${sourceTag} to ${destinationTag} in ${imageNamespace} "
+                 openshift.tag("${svcName}:${sourceTag}", "${svcName}:${destinationTag}")
+             }
+         }
+         echo "deploying the ${svcName} to ${projName} "
+         openshift.withCluster() {
+             openshift.withProject( projName) {
+                def dply = openshift.selector("dc", svcName)
+                echo "waiting for ... "+ dply.rollout().status()
+             }
+         }
+     }//script
 }
 
 def build(folderName) {
