@@ -38,7 +38,7 @@ echo "import integration-master-pipeline"
 oc new-app -f pipelinetemplates/pipeline-aggregated-build.yml -p IMAGE_NAMESPACE=$DEV_PROJECT -p DEV_PROJECT=$DEV_PROJECT -p TEST_PROJECT=$TEST_PROJECT -p PROD_PROJECT=$PROD_PROJECT
 
 echo "import 3scale API publishing pipeline"
-oc new-app -f cicd-3scale/groovy-scripts/pipeline-template.yaml
+oc new-app -f cicd-3scale/groovy-scripts/pipeline-template.yaml -p IMAGE_NAMESPACE=$DEV_PROJECT -p DEV_PROJECT=$DEV_PROJECT -p TEST_PROJECT=$TEST_PROJECT -p PROD_PROJECT=$PROD_PROJECT
 
 oc delete project $TEST_PROJECT
 oc new-project $TEST_PROJECT 2> /dev/null

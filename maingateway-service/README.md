@@ -28,7 +28,7 @@ The example can be built with
 
 url:
 
-http://localhost:8080/cicd/maingateway/profile/11111?alertType=accident
+http://localhost:8080/cicd/maingateway/profile/11111?alertType=ACCIDENT
 
 ### Running the example in OpenShift
 

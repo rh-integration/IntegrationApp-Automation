@@ -17,13 +17,15 @@
 
       var e = document.getElementById("alerttype");
       var alertType = e.options[e.selectedIndex].value;
-      var url=url+'profile/'+id;
+      var gatewayurl =document.getElementsByName('gatewayurl')[0].value;
+      var userkey =document.getElementsByName('user_key')[0].value;
+      gatewayurl=gatewayurl+'/cicd/maingateway/profile/'+id;
 
       $.ajax(
    {
       type:'GET',
-      url:url,
-      data:"alertType="+alertType+"&api-key="+token,
+      url:gatewayurl,
+      data:"alertType="+alertType+"&user_key="+userkey,
       success: function(data){
         alert(data);
       }
@@ -42,18 +44,26 @@
 </head>
 
 <body>
-    <h1>CICD GA Release - Users - List</h1>
+    <h1>CICD GA Release -Web App</h1>
+    <div class="search">
+        <label>3scale user_key   :</label>
+        <input type="text" name="user_key" value="<%=token  %>" placeholder="input the user_key" style="width: 700px;" ><br><br>
+        <label>3scale gateway URL :</label>
+        <input type="text" name="gatewayurl" value="<%=url  %>" placeholder="input the 3scale gateway url"  style="width: 700px;" />
+    </div>
+
     <div class="search">
         <label>UserId：</label>
-        <input type="text" name="suserid" value="<%=user  %>" placeholder="input the userid">
-        <input type="button" name="sSearch" value="Search" class="btn" onclick="Search();">
+        <input type="text" name="suserid" value="<%=user  %>" placeholder="input the id">
+        <input type="button" name="sSearch" value="Search User" class="btn" onclick="Search();" style="width: 100px;" />
+        <input class="btn" type='submit' value='Add New User' onclick="javascript: location.href='add'"  style="width: 100px;" />
     </div>
-<div class="dropdown">
+<div class="dropdown" style="width: 300px;">
      <div class="select">
         <label>
 
-        	<span>Alert Type:</span>
-        	<select name="alerttype" id="alerttype" style="width: 200px;">
+        	<span>Select Alert Type:</span>
+        	<select name="alerttype" id="alerttype" style="width: 250px;">
         		<option value="ACCIDENT">Accident</option>
             <option value="WEATHER">Weather</option>
         		<option value="MAILBOX">Mailbox</option>
@@ -67,7 +77,7 @@
 
     </div>
     <div class="control">
-        <input class="btn" type='submit' value='Add' onclick="javascript: location.href='add'">
+
     </div>
     <table class="table">
         <tr>

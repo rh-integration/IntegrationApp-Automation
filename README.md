@@ -54,7 +54,8 @@ The following instructions assuming that you are using OpenShift. But the same c
 Download the source codes from git repository by either forking, or simply cloning it. 
 
 ```
-git clone https://github.com/RHsyseng/IntegrationApp-Automation.git  
+git clone https://github.com/RHsyseng/IntegrationApp-Automation.git 
+
 ```
 Assume you have OpenShift cluster ready and running.
 
@@ -66,19 +67,22 @@ oc login <OpenShift cluster url> --token=<OpenShift user login token>
 
 Setup `rh-dev`, `rh-test` and `rh-prod` OpenShift projects as the target environment (you may skip this step if you already have the environment ready, and this script will first delete the original projects in OpenShift and create the new ones).
     
-```
+```sh
+
 ./setup/setup.sh
+
 ```
 If you run the above setup.sh, the pipelines are automatically imported. In case you want to further customize the pipelines, please follow the instructions below.
 
 You can also customize the pipelines by changing their parameters.  Different templates have different parameters but they are all listed below:
+
 ```
 Parameters           Default                            Explanations
 GIT_REPO             https://github.com/RHsyseng/IntegrationApp-Automation.git
 GIT_BRANCH           master                             #git branch where you want to build
 OPENSHIFT_HOST       <leave it for now, will be used in future release>
 OPENSHIFT_TOKEN      <leave it for now, will be used in future release>
-DEV_PROJECT          rh-dev                
+DEV_PROJECT          rh-dev
 TEST_PROJECT         rh-test
 PROD_PROJECT         rh-prod
 MYSQL_USER           dbuser                             #your DB user account
@@ -89,8 +93,9 @@ IMAGE_NAMESPACE      rh-dev                             #the OpenShift project/n
 * If you have customized MYSQL_USER or MYSQL_PWD, please edit the nodejsalert-ui/config.js accordingly.
 
 ```
-To list the parameters of each template:
-```
+##### To list the parameters of each template:
+```sh
+
 # list for fisuser-service pipeline
 oc process --parameters -f fisuser-service/src/main/resources/pipeline-app-build.yml
 
@@ -108,12 +113,19 @@ oc process --parameters -f  pipelinetemplates/pipeline-aggregated-build.yml
 
 ```
 
-To replace the existing pipelines with your customized pipelines:
-```
-# switch to rh-dev project
+##### To replace the existing pipelines with your customized pipelines:
+
+```sh
+
+##### switch to rh-dev project
 oc project rh-dev
 
-# Remove the exisiting pipeline that you want to customize.
+```
+
+#### Remove the exisiting pipeline that you want to customize.
+
+```sh
+
 oc delete bc fisuser-service-pipeline
 oc delete bc maingateway-service-pipeline
 oc delete bc nodejsalert-ui-pipeline
@@ -121,7 +133,9 @@ oc delete bc fisalert-service-pipeline
 oc delete bc aggregated-pipeline
 oc delete bc publish-api-3scale
 
+```
 
+```sh
 
 # import fisuser-service pipeline
 oc new-app -f fisuser-service/src/main/resources/pipeline-app-build.yml -p IMAGE_REGISTRY=docker-registry.default.svc:5000 -p IMAGE_NAMESPACE=rh-dev -p DEV_PROJECT=rh-dev -p TEST_PROJECT=rh-test -p PROD_PROJECT=rh-prod
@@ -136,10 +150,10 @@ oc new-app -f nodejsalert-ui/resources/pipeline-app-build.yml -p IMAGE_REGISTRY=
 oc new-app -f fisalert-service/src/main/resources/pipeline-app-build.yml -p IMAGE_REGISTRY=docker-registry.default.svc:5000 -p IMAGE_NAMESPACE=rh-dev -p DEV_PROJECT=rh-dev -p TEST_PROJECT=rh-test -p PROD_PROJECT=rh-prod
 
 # import aggregated-pipeline
-oc new-app -f pipelinetemplates/pipeline-aggregated-build.yml -p IMAGE_REGISTRY=docker-registry.default.svc:5000 -p IMAGE_NAMESPACE=rh-dev -p DEV_PROJECT=rh-dev -p TEST_PROJECT=rh-test -p PROD_PROJECT=rh-prod
+oc new-app -f pipelinetemplates/pipeline-aggregated-build.yml -p IMAGE_REGISTRY=docker-registry.default.svc:5000 -p IMAGE_NAMESPACE=rh-dev -p DEV_PROJECT=rh-dev -p TEST_PROJECT=rh-test -p PROD_PROJECT=rh-prod -p API_BACK_END=<api_backend_url> -p END_POINT=<production_gateway_url> -p SANDBOX_END_POINT=<staging_gateway_url> -p THREESCALE_URL=<3scale_admin_url> -p API_TOKEN=<3scale_api_token>
 
 # import 3scale pipeline
-oc new-app -f cicd-3scale/groovy-scripts/pipeline-template.yaml -p API_BACK_END=http://maingateway-service-rh-dev.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com -p END_POINT=https://fusecicd-apicast-staging.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com -p SANDBOX_END_POINT=https://fusecicd-apicast-staging.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com -p THREESCALE_URL=https://ah-3scale-ansible-admin.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com -p API_TOKEN=4a2a1ce5f6a7c5f6a67234d84f647f68b690e4931429d93c65e2bdf63a6a406f
+oc new-app -f cicd-3scale/groovy-scripts/pipeline-template.yaml -p API_BACK_END=<api_backend_url> -p END_POINT=<production_gateway_url> -p SANDBOX_END_POINT=<staging_gateway_url> -p THREESCALE_URL=<3scale_admin_url> -p API_TOKEN=<3scale_api_token>
 
 
 ```
@@ -148,16 +162,17 @@ After you have imported all of the pipeline templates, you should have them unde
 
 ![Pipeline View](images/pipeline_import_view.png "Pipeline View")
 
-Please start the pipeline from `maingateway-service-pipeline`, `fisuser-service-pipeline`, `fisalert-service-pipeline`, and then `nodejsalert-ui-pipeline`.
+Please start the pipeline from `maingateway-service-pipeline`, `fisuser-service-pipeline`, `fisalert-service-pipeline`, `nodejsalert-ui-pipeline` and then `publish-api-3scale` to publish API on 3scale.
 
 With `aggregated-pipeline`, you can build the entire application including all of the above modules mentioned. If you choose this pipeline, by default, it will build the entire application, but you will also be asked to select which individual module you want to bulid.  You will need to make your selection in your Jenkins console.
 
-Once the build is finished, in your OpenShift, go to `rh-test` or `rh-prod`, nevigate to `Applications`, `Routes` and click on nodejsalert-ui URL to launch the application.
+Once the build is finished, in your OpenShift, go to `rh-test` or `rh-prod`, nevigate to `Applications`, `Routes` and click on maingateway-service and nodejsalert-ui URL to launch the application.
 You should see the application and it is started with web front-end like this: 
 
 ![Application View](images/application_launch_view.png "Application View")
 
-### Jenkins plugin setup & In-process Script Approval
+
+### Jenkins plugin setup & In-process Script Approval & 3scale pipeline setup
 
 Before running `3scale API publishing Pipeline (publish-api-3scale)`, please read the following instructions.
 
@@ -166,6 +181,12 @@ Before running `3scale API publishing Pipeline (publish-api-3scale)`, please rea
    To install "skip-certificate-check", go to "Manage Jenkins", "Manage Plugins", In Filter box, search and then select "skip-certificate-check", then click on "Install without restart".  In the installing page, check the "Restart Jenkins when Installation is complete and no jobs are running" checkbox, and wait for the installation and restart to complete.  We suggest you to use persistent storage enabled Jenkins pod so that you only need to do this installation once.
 
 2) In Jenkins 2, running script in pipeline are subject to script security check (this pipeline was developed with Groovy script), and the script has to be approved before it is allowed to run.  When you start to run `3scale API publishing Pipeline`, you mostly will encounter "Scripts not permitted to use method ... " exceptions. If this happens, please login Jenkins as an administrator, go to "Manage Jenkins", "In-process Script Approval" page to approval the script.  You may need to do the approval multiple times as we found that Jenkins does the check on method level.  You only need to approve once on all those methods during the first run.  We suggest you to use persistent storage enabled Jenkins pod so that your approvals can be saved and reloaded if pod is restarted.
+
+3) Create the routes for your APIcast gateways in 3scale Project if required with below command
+
+```sh
+oc new-app -f apicast-routes-template.yaml -p BASE_NAME=3scalefuse -p WILDCARD_DOMAIN=<openshift_wildcard_domain> -n <3scale_namespace>
+```
 
 ### Deploy with BlueGreen Deployment Strategy
 
