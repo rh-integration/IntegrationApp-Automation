@@ -12,7 +12,7 @@ pipeline {
         string (defaultValue: 'master', name:'GIT_BRANCH', description:'Git branch in the source git')
         string (defaultValue: 'rel1.1', name:'SERVICE_VERSION', description:'Service version to be built')
         booleanParam (defaultValue: false, name:'BLUEGREEN_DEPLOYMENT', description:'Deploy Green version to Test/Production (default: normal deployment)')
-
+        booleanParam (defaultValue: false, name:'SELECT_DEPLOY_TO_PROD', description:'Approval to deploy to Production (default: no deployment to production)')
     }
     environment {
         MODULE_NAME = 'nodejsalert-ui'
@@ -21,6 +21,11 @@ pipeline {
         stage('Build Service nodejsalert-ui') {
             environment {
                 srcTag = 'latest'
+            }
+            when {
+              expression {
+                  params.SELECT_DEPLOY_TO_PROD == false
+              }
             }
             steps {
                 echo "Building.. ${MODULE_NAME}"
@@ -43,7 +48,7 @@ pipeline {
         stage('Pushing Green version to Test') {
             when {
               expression {
-                  params.BLUEGREEN_DEPLOYMENT == true
+                  (params.BLUEGREEN_DEPLOYMENT == true && params.SELECT_DEPLOY_TO_PROD == false)
               }
             }
             environment {
@@ -56,51 +61,23 @@ pipeline {
                 promoteService(params.IMAGE_NAMESPACE, params.TEST_PROJECT, env.MODULE_NAME + "-" + params.SERVICE_VERSION)
             }
         }
-        stage('Pushing Green version to Production') {
+        stage('Smoke Test') {
             when {
               expression {
-                  params.BLUEGREEN_DEPLOYMENT == true
+                  (params.SELECT_DEPLOY_TO_PROD == false)
               }
             }
-            environment {
-                destTag = 'promoteProd'
-            }
             steps {
-                echo "Deploy ${MODULE_NAME} Green to ${PROD_PROJECT} "
-                tagImage(params.IMAGE_NAMESPACE, params.DEV_PROJECT, env.MODULE_NAME, params.SERVICE_VERSION, env.destTag)
-                promoteBlueGreenServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, env.MODULE_NAME,params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, params.SERVICE_VERSION, params.PROD_PROJECT)    
-                promoteService(params.IMAGE_NAMESPACE, params.PROD_PROJECT, env.MODULE_NAME + "-" + params.SERVICE_VERSION)
+                script {
+                    serviceName = 'nodejsalert-ui'
+                    makeGetRequest("http://${serviceName}:8080")
+                }
             }
         }
-
-/////////////////////////////////////smoke test//////////////////////////////////////////////////////////
-
-
-
-stage('Smoke Test') {
-         steps {
-
-	  script {
-
-		serviceName = 'nodejsalert-ui'
-	        makeGetRequest("http://${serviceName}:8080")
-
-	  }
-
- 		
-	}
-		
-   	}
-
-///////////////////////////////////////end of smoke test////////////////////////////////////////////////
-
-
-
-
         stage('Pushing to Test') {
             when {
               expression {
-                  params.BLUEGREEN_DEPLOYMENT == false
+                  params.SELECT_DEPLOY_TO_PROD == false
               }
             }
             environment {
@@ -114,10 +91,31 @@ stage('Smoke Test') {
                 promoteService(params.IMAGE_NAMESPACE, params.TEST_PROJECT, env.MODULE_NAME)
             }
         }
+        stage('Wait for user to select module to push to production.') {
+            when {
+                expression {
+                    params.SELECT_DEPLOY_TO_PROD == true
+                }
+            }   
+            steps {
+                script {
+                    try {
+                        timeout (time:2, unit:'HOURS') {
+                            env.userProdApproval = input(id: 'userInput', message: "Do you approve this build to promote to production?")
+                            env.userProdApproval = 'Approved'
+                        } 
+                    } catch (exception) {
+                      env.userProdApproval='---'    
+                    }
+        
+                    println("User approval to production " + env.userProdApproval);
+                }
+            }
+        }
         stage('Pushing to Prod') {
             when {
               expression {
-                  params.BLUEGREEN_DEPLOYMENT == false
+                env.userProdApproval == 'Approved'
               }
             }
             environment {
@@ -129,6 +127,22 @@ stage('Smoke Test') {
                 tagImage(params.IMAGE_NAMESPACE, params.DEV_PROJECT, env.MODULE_NAME, env.srcTag, env.destTag)
                 promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, env.MODULE_NAME,params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.PROD_PROJECT)
                 promoteService(params.IMAGE_NAMESPACE, params.PROD_PROJECT, env.MODULE_NAME)
+            }
+        }
+        stage('Pushing Green version to Production') {
+            when {
+              expression {
+                  (env.userProdApproval == 'Approved' && params.BLUEGREEN_DEPLOYMENT == true) 
+              }
+            }
+            environment {
+                destTag = 'promoteProd'
+            }
+            steps {
+                echo "Deploy ${MODULE_NAME} Green to ${PROD_PROJECT} "
+                tagImage(params.IMAGE_NAMESPACE, params.DEV_PROJECT, env.MODULE_NAME, params.SERVICE_VERSION, env.destTag)
+                promoteBlueGreenServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, env.MODULE_NAME,params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, params.SERVICE_VERSION, params.PROD_PROJECT)    
+                promoteService(params.IMAGE_NAMESPACE, params.PROD_PROJECT, env.MODULE_NAME + "-" + params.SERVICE_VERSION)
             }
         }
     }
@@ -155,7 +169,8 @@ def promoteBlueGreenServiceSetup(openShiftHost, openShiftToken, svcName, registr
     try {
         sh """ 
             oc create dc ${svcName}-${tagName} --image=${registry}/${imageNameSpace}/${svcName}:${tagName} -n ${projName} 2> /dev/null 
-            oc deploy ${svcName}-${tagName} --cancel -n ${projName}  2> /dev/null
+            oc set env dc ${svcName}-${tagName} APP_NAME=${svcName} -n ${projName}  2> /dev/null
+            oc rollout cancel dc ${svcName}-${tagName} -n ${projName}  2> /dev/null
             oc expose dc ${svcName}-${tagName} --name=${svcName}-green --port=8080 -n ${projName}  2> /dev/null
             echo "Finished creation"
         """
@@ -174,8 +189,8 @@ def promoteServiceSetup(openShiftHost, openShiftToken, svcName, registry, imageN
     try {
         sh """ 
             oc create dc ${svcName} --image=${registry}/${imageNameSpace}/${svcName}:${tagName} -n ${projName} 2> /dev/null 
-            oc env dc ${svcName} APP_NAME=${svcName} -n ${projName} 2> /dev/null
-            oc deploy ${svcName} --cancel -n ${projName}  2> /dev/null
+            oc set env dc ${svcName} APP_NAME=${svcName} -n ${projName} 2> /dev/null
+            oc rollout cancel dc ${svcName} -n ${projName}  2> /dev/null
             oc expose dc ${svcName} --port=8080 -n ${projName}  2> /dev/null
             oc expose svc ${svcName} --name=${svcName} -n ${projName}  2> /dev/null
         """
