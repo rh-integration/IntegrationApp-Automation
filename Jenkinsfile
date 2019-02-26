@@ -55,7 +55,8 @@ pipeline {
             }
             when {
                 expression {
-                    env.userSelModule == 'Gateway' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false
+                    ((env.userSelModule == 'Gateway' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false)
+                        && params.SELECT_DEPLOY_TO_PROD == false)
                 }
             }
             steps {
@@ -73,7 +74,8 @@ pipeline {
             }
             when {
                 expression {
-                    env.userSelModule == 'FisUser' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false
+                    ((env.userSelModule == 'FisUser' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false)
+                        && params.SELECT_DEPLOY_TO_PROD == false) 
                 }
             }
             steps {
@@ -90,7 +92,8 @@ pipeline {
             }
             when {
                 expression {
-                    env.userSelModule == 'FisAlert' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false
+                    ((env.userSelModule == 'FisAlert' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false)
+                        && params.SELECT_DEPLOY_TO_PROD == false) 
                 }
             }
             steps {
@@ -107,7 +110,9 @@ pipeline {
             }
             when {
                 expression {
-                    env.userSelModule == 'UI' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false
+                    ((env.userSelModule == 'UI' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false)
+                        && params.SELECT_DEPLOY_TO_PROD == false) 
+
                 }
             }
             steps {
@@ -127,46 +132,32 @@ pipeline {
                 } 
             }
         }
+        stage('Smoke Test') {
+            when {
+                expression {
+                    params.SELECT_DEPLOY_TO_PROD == false 
+                }
+            }
+            steps {
+                script {
+                    serviceName = 'maingateway-service'
+                    smokeTestOperation='cicd/maingateway/profile/11111?alertType=ACCIDENT'
+                    makeGetRequest("http://${serviceName}/${smokeTestOperation}")
 
-/////////////////////////////////////smoke test//////////////////////////////////////////////////////////
+                    serviceName = 'fisuser-service'
+                    smokeTestOperation='cicd/user/profile/11111'
+                    makeGetRequest("http://${serviceName}/${smokeTestOperation}")
 
+                    serviceName = 'fisalert-service'
+                    smokeTestOperation='cicd/alert'
+                    body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
+                    makePostRequest("http://${serviceName}/${smokeTestOperation}", body,'POST')
 
-
-stage('Smoke Test') {
-         steps {
-
-	  script {
-
-	        serviceName = 'maingateway-service'
-		smokeTestOperation='cicd/maingateway/profile/11111?alertType=ACCIDENT'
-		makeGetRequest("http://${serviceName}/${smokeTestOperation}")
-
-
-		serviceName = 'fisuser-service'
-		smokeTestOperation='cicd/user/profile/11111'
-		makeGetRequest("http://${serviceName}/${smokeTestOperation}")
-                
-
-		serviceName = 'fisalert-service'
-		smokeTestOperation='cicd/alert'
-		body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
-		makePostRequest("http://${serviceName}/${smokeTestOperation}", body,'POST')
-
-		serviceName = 'nodejsalert-ui'
-	        makeGetRequest("http://${serviceName}:8080")
-
-	  }
-
- 		
-	}
-		
-   	}
-
-///////////////////////////////////////end of smoke test////////////////////////////////////////////////
-
-
-
-
+                    serviceName = 'nodejsalert-ui'
+                    makeGetRequest("http://${serviceName}:8080")
+                }
+            }
+        }
         stage('Pushing to Test - maingateway') {
            environment {
                srcTag = 'latest'
@@ -174,7 +165,8 @@ stage('Smoke Test') {
            }
            when {
                expression {
-                   env.userSelModule == 'Gateway' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false
+                   ((env.userSelModule == 'Gateway' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false)
+                        && params.SELECT_DEPLOY_TO_PROD == false) 
                }
            }
            steps {
@@ -190,7 +182,8 @@ stage('Smoke Test') {
             }
            when {
                expression {
-                   env.userSelModule == 'FisUser' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false
+                   ((env.userSelModule == 'FisUser' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false)
+                        && params.SELECT_DEPLOY_TO_PROD == false)
                }
            }
             steps {
@@ -207,7 +200,8 @@ stage('Smoke Test') {
             }
            when {
                expression {
-                   env.userSelModule == 'FisAlert' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false
+                   ((env.userSelModule == 'FisAlert' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false)
+                        && params.SELECT_DEPLOY_TO_PROD == false)
                }
            }
             steps {
@@ -223,7 +217,8 @@ stage('Smoke Test') {
             }
            when {
                expression {
-                   env.userSelModule == 'UI' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false
+                   ((env.userSelModule == 'UI' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false)
+                        && params.SELECT_DEPLOY_TO_PROD == false) 
                }
            }
             steps {
@@ -235,14 +230,14 @@ stage('Smoke Test') {
         stage('Wait for user to select module to push to production.') {
             when {
                 expression {
-                    params.SELECT_DEPLOY_TO_PROD == true && params.SELECT_BUILD_MODULE == true
+                    params.SELECT_DEPLOY_TO_PROD == true
                 }
             }   
             steps {
                 script {
                     try {
                         timeout (time:2, unit:'HOURS') {
-                            env.userProdApproval = input(id: 'userInput', message: "Do you approvel this build to promote to production? Selected build [" +  env.userSelModule + "]?")
+                            env.userProdApproval = input(id: 'userInput', message: "Do you approve this build to promote to production? Selected build [" +  env.userSelModule + "]?")
                             env.userProdApproval = 'Approved'
                         } 
                     } catch (exception) {
@@ -260,7 +255,7 @@ stage('Smoke Test') {
             }
             when {
                 expression {
-                    env.userProdApproval == 'Approved' && (env.userSelModule == 'Gateway' || env.userSelModule == 'All')
+                    env.userProdApproval == 'Approved'
                 }
             }
             steps {
@@ -277,7 +272,7 @@ stage('Smoke Test') {
             }
             when {
                 expression {
-                    env.userProdApproval == 'Approved' && (env.userSelModule == 'FisUser' || env.userSelModule == 'All')
+                    env.userProdApproval == 'Approved'
                 }
             }
             steps {
@@ -294,7 +289,7 @@ stage('Smoke Test') {
             }
             when {
                 expression {
-                    env.userProdApproval == 'Approved' && (env.userSelModule == 'FisAlert' || env.userSelModule == 'All')
+                    env.userProdApproval == 'Approved'
                 }
             }
             steps {
@@ -310,7 +305,7 @@ stage('Smoke Test') {
             }
             when {
                 expression {
-                    env.userProdApproval == 'Approved' && (env.userSelModule == 'UI' || env.userSelModule == 'All')
+                    env.userProdApproval == 'Approved'
                 }
             }
             steps {
@@ -324,11 +319,11 @@ stage('Smoke Test') {
 def setEnvForDBModule(openShiftHost, openShiftToken, svcName, projName, mysqlUser, mysqlPwd) {
     try {
     sh """ 
-        oc env dc ${svcName} MYSQL_SERVICE_NAME=mysql -n ${projName} 2> /dev/null
-        oc env dc ${svcName} MYSQL_SERVICE_USERNAME=${mysqlUser} -n ${projName} 2> /dev/null
-        oc env dc ${svcName} MYSQL_SERVICE_PASSWORD=${mysqlPwd} -n ${projName} 2> /dev/null
-        oc env dc ${svcName} JAVA_APP_DIR=/deployments -n ${projName} 2> /dev/null
-        oc deploy ${svcName} --cancel -n ${projName} -n ${projName} 2> /dev/null
+        oc set env dc ${svcName} MYSQL_SERVICE_NAME=mysql -n ${projName} 2> /dev/null
+        oc set env dc ${svcName} MYSQL_SERVICE_USERNAME=${mysqlUser} -n ${projName} 2> /dev/null
+        oc set env dc ${svcName} MYSQL_SERVICE_PASSWORD=${mysqlPwd} -n ${projName} 2> /dev/null
+        oc set env dc ${svcName} JAVA_APP_DIR=/deployments -n ${projName} 2> /dev/null
+        oc rollout cancel dc ${svcName} -n ${projName} -n ${projName} 2> /dev/null
 
     """
     } catch (Exception e) {
@@ -346,8 +341,8 @@ def promoteServiceSetup(openShiftHost, openShiftToken, svcName,registry,imageNam
     try {
         sh """ 
             oc create dc ${svcName} --image=${registry}/${imageNameSpace}/${svcName}:${tagName} -n ${projName} 2> /dev/null     
-            oc env dc ${svcName} APP_NAME=${svcName} -n ${projName} 2> /dev/null 
-            oc deploy ${svcName} --cancel -n ${projName} 2> /dev/null 
+            oc set env dc ${svcName} APP_NAME=${svcName} -n ${projName} 2> /dev/null 
+            oc rollout cancel dc ${svcName} -n ${projName} 2> /dev/null 
             oc expose dc ${svcName} --port=8080 -n ${projName} 2> /dev/null 
             oc expose svc ${svcName} --name=${svcName} -n ${projName} 2> /dev/null 
         """
