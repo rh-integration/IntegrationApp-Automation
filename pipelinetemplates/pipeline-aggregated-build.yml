@@ -30,6 +30,39 @@ parameters:
   required: true
 - name: IMAGE_NAMESPACE 
   required: true
+- name: API_BACK_END
+  value: http://maingateway-service-ah-dev2.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com
+  required: true
+- name: END_POINT
+  value: https://fusecicd-apicast-staging.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com
+  required: true
+- name: SANDBOX_END_POINT
+  value: https://fusecicd-apicast-staging.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com
+  required: true
+- name: SWAGGER_FILE_NAME
+  displayName: SWAGGER_FILE_NAME
+  required: true
+  value: https://raw.githubusercontent.com/RHsyseng/IntegrationApp-Automation/master/cicd-3scale/groovy-scripts/openapi-spec.json
+  description: SWAGGER_FILE_NAME for 3Scale env
+- name: OPENSHIFT_SERVICE_NAME
+  value: 3scalefuse
+  required: true
+- name: THREESCALE_URL
+  displayName: Admin URL of Threescale
+  required: true
+  value: https://ah-3scale-ansible-admin.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com
+  description: Admin URL of Threescale
+- name: API_TOKEN
+  displayName: Access token from 3scale 
+  required: true
+  value: 4a2a1ce5f6a7c5f6a67234d84f647f68b690e4931429d93c65e2bdf63a6a406f
+  description: Access token from 3scale for calling management API
+- name: THREESCALE_OPENSHIFT_PROJECT
+  displayName: API CAST Gateway Project or 3scale project name deployed on Openshift to create the routes
+  required: true
+  value: ah-3scale-ansible
+
+
 objects:
 - apiVersion: v1
   kind: BuildConfig
@@ -71,3 +104,22 @@ objects:
           value: ${IMAGE_NAMESPACE}
         - name: IMAGE_REGISTRY 
           value: ${IMAGE_REGISTRY}
+        - name: API_BACK_END 
+          value: ${API_BACK_END}
+        - name: END_POINT
+          value: ${END_POINT}
+        - name: SANDBOX_END_POINT
+          value: ${SANDBOX_END_POINT}
+        - name: OPENSHIFT_SERVICE_NAME
+          value: ${OPENSHIFT_SERVICE_NAME}
+        - name: THREESCALE_URL
+          value: ${THREESCALE_URL}
+        - name: API_TOKEN
+          value: ${API_TOKEN}
+        - name: MAJOR_VERSION
+          value: ${MAJOR_VERSION}
+        - name: SWAGGER_FILE_NAME
+          value: ${SWAGGER_FILE_NAME}
+        - name: THREESCALE_OPENSHIFT_PROJECT
+          value: ${THREESCALE_OPENSHIFT_PROJECT}
+       

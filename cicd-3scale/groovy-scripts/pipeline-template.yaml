@@ -49,6 +49,14 @@ objects:
           value: ${MAJOR_VERSION}
         - name: SWAGGER_FILE_NAME
           value: ${SWAGGER_FILE_NAME}
+        - name: DEV_PROJECT 
+          value: ${DEV_PROJECT}
+        - name: TEST_PROJECT 
+          value: ${TEST_PROJECT}
+        - name: PROD_PROJECT 
+          value: ${PROD_PROJECT}
+        - name: IMAGE_NAMESPACE 
+          value: ${IMAGE_NAMESPACE}
        
 parameters:
 - name: GIT_REPO
@@ -58,13 +66,13 @@ parameters:
   value: master
   required: true
 - name: API_BACK_END
-  value: http://maingateway-service-ah-dev2.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com
+  value: http://maingateway-service-ah-dev.app.middleware.ocp.cloud.lab.eng.bos.redhat.com
   required: true
 - name: END_POINT
-  value: https://fusecicd-apicast-staging.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com
+  value: http://3scalefuse.app.middleware.ocp.cloud.lab.eng.bos.redhat.com
   required: true
 - name: SANDBOX_END_POINT
-  value: https://fusecicd-apicast-staging.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com
+  value: http://3scalefuse-staging.app.middleware.ocp.cloud.lab.eng.bos.redhat.com
   required: true
 - name: SWAGGER_FILE_NAME
   displayName: SWAGGER_FILE_NAME
@@ -77,13 +85,22 @@ parameters:
 - name: THREESCALE_URL
   displayName: Admin URL of Threescale
   required: true
-  value: https://ah-3scale-ansible-admin.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com
+  value: https://ah-3scale-ansible-admin.app.middleware.ocp.cloud.lab.eng.bos.redhat.com
   description: Admin URL of Threescale
 - name: API_TOKEN
   displayName: Access token from 3scale 
   required: true
-  value: 4a2a1ce5f6a7c5f6a67234d84f647f68b690e4931429d93c65e2bdf63a6a406f
+  value: e03adec41c0ceab7267b68eba2112d72a9d073979530b35b8a970d91ca3bdd24
   description: Access token from 3scale for calling management API
+- name: DEV_PROJECT 
+  required: true
+- name: TEST_PROJECT 
+  required: true
+- name: PROD_PROJECT 
+  required: true
+- name: IMAGE_NAMESPACE 
+  required: true
+
 
 
 

@@ -4,14 +4,14 @@ development: {
     //mysql connection settings for development
     database: {
         host:   'localhost',
-        user:   '',
+        user:   'root',
         password: '',
         database: 'sampledb'
     },
     //3scale details
     threescale: {
-         url: 'https://3scale-prod-1.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com:443/cicd/maingateway/',
-         token: 'ab6283abd6fd695fd4b31e8bf82d5e462c13e998'
+         url: 'http://3scalefuse-staging.app.middleware.ocp.cloud.lab.eng.bos.redhat.com',
+         token: 'c8515bb07dd5694f5b457306b402b53a'
     }
 },
 production: {
@@ -27,8 +27,8 @@ production: {
 
     //3scale details
     threescale: {
-        url: 'https://3scale-prod-1.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com:443/cicd/maingateway/',
-        token: 'ab6283abd6fd695fd4b31e8bf82d5e462c13e998'
+        url: 'http://3scalefuse-staging.app.middleware.ocp.cloud.lab.eng.bos.redhat.com',
+        token: 'c8515bb07dd5694f5b457306b402b53a'
     }
 
 }

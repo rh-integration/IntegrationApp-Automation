@@ -10,9 +10,9 @@ objects:
 - apiVersion: route.openshift.io/v1
   kind: Route
   metadata:
-    name: ${BASE_NAME}-${MAJOR_VERSION}-staging
+    name: ${BASE_NAME}-staging
   spec:
-    host: ${BASE_NAME}-${MAJOR_VERSION}-staging.${WILDCARD_DOMAIN}
+    host: ${BASE_NAME}-staging.${WILDCARD_DOMAIN}
     port:
       targetPort: gateway
     tls:
@@ -25,9 +25,9 @@ objects:
 - apiVersion: route.openshift.io/v1
   kind: Route
   metadata:
-    name: ${BASE_NAME}-${MAJOR_VERSION}-production
+    name: ${BASE_NAME}-production
   spec:
-    host: ${BASE_NAME}-${MAJOR_VERSION}.${WILDCARD_DOMAIN}
+    host: ${BASE_NAME}.${WILDCARD_DOMAIN}
     port:
       targetPort: gateway
     tls:
@@ -47,7 +47,4 @@ parameters:
   name: BASE_NAME
   value: rhte-api
   required: true
-- description: The API major version (1, 2, etc.)
-  displayName: 3scale API major version
-  name: MAJOR_VERSION
-  required: true
+
