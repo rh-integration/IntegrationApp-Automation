@@ -4,7 +4,7 @@ pipeline {
             label 'maven'
         }
     }
-    parameters{ 
+    parameters{
         string (defaultValue: 'notinuse', name:'OPENSHIFT_HOST', description:'open shift cluster url')
         string (defaultValue: 'notinuse', name:'OPENSHIFT_TOKEN', description:'open shift token')
         string (defaultValue: 'docker-registry.default.svc:5000', name:'IMAGE_REGISTRY', description:'open shift token')
@@ -32,21 +32,21 @@ pipeline {
                     try {
                         timeout (time:180, unit:'SECONDS') {
                             env.userSelModule = input(id: 'userInput', message: 'Please select which module to bulid?',
-                            parameters: [[$class: 'ChoiceParameterDefinition', defaultValue: 'strDef', 
+                            parameters: [[$class: 'ChoiceParameterDefinition', defaultValue: 'strDef',
                                description:'describing choices', name:'nameChoice', choices: "Gateway\nFisUser\nFisAlert\nUI\nAll"]
                             ])
                         }
                     } catch (exception) {
-                      env.userSelModule='All'    
+                      env.userSelModule='All'
                     }
-        
+
                     println("User selected module " + env.userSelModule);
                 }
             }
         }
         stage ('source from git') {
             steps {
-                git url: params.GIT_REPO, branch: params.GIT_BRANCH                
+                git url: params.GIT_REPO, branch: params.GIT_BRANCH
             }
         }
 
@@ -70,13 +70,13 @@ pipeline {
             }
         }
         stage('Build fisuser-service') {
-            environment { 
+            environment {
                 serviceName = 'fisuser-service'
             }
             when {
                 expression {
                     ((env.userSelModule == 'FisUser' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false)
-                        && params.SELECT_DEPLOY_TO_PROD == false) 
+                        && params.SELECT_DEPLOY_TO_PROD == false)
                 }
             }
             steps {
@@ -88,13 +88,13 @@ pipeline {
            }
         }
         stage('Build fisalert-service') {
-            environment { 
+            environment {
                 serviceName = 'fisalert-service'
             }
             when {
                 expression {
                     ((env.userSelModule == 'FisAlert' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false)
-                        && params.SELECT_DEPLOY_TO_PROD == false) 
+                        && params.SELECT_DEPLOY_TO_PROD == false)
                 }
             }
             steps {
@@ -106,21 +106,21 @@ pipeline {
             }
         }
         stage('Build nodejsalert-ui') {
-            environment { 
+            environment {
                 serviceName = 'nodejsalert-ui'
             }
             when {
                 expression {
                     ((env.userSelModule == 'UI' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false)
-                        && params.SELECT_DEPLOY_TO_PROD == false) 
+                        && params.SELECT_DEPLOY_TO_PROD == false)
 
                 }
             }
             steps {
                 echo "Building.. ${serviceName}"
                 node ('nodejs') {
-                    git url: params.GIT_REPO, branch: params.GIT_BRANCH                
- 
+                    git url: params.GIT_REPO, branch: params.GIT_BRANCH
+
                     script {
                         sh """
                         cd ${serviceName}
@@ -130,13 +130,13 @@ pipeline {
                         npm install && npm run openshift
                         """
                     }
-                } 
+                }
             }
         }
-        stage('Smoke Test') {
+        stage('Dev-Env smoke-test') {
             when {
                 expression {
-                    params.SELECT_DEPLOY_TO_PROD == false 
+                    params.SELECT_DEPLOY_TO_PROD == false
                 }
             }
             steps {
@@ -160,7 +160,7 @@ pipeline {
                 }
             }
         }
-	
+
         stage('Pushing to Test - maingateway') {
            environment {
                srcTag = 'latest'
@@ -169,7 +169,7 @@ pipeline {
            when {
                expression {
                    ((env.userSelModule == 'Gateway' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false)
-                        && params.SELECT_DEPLOY_TO_PROD == false) 
+                        && params.SELECT_DEPLOY_TO_PROD == false)
                }
            }
            steps {
@@ -191,7 +191,7 @@ pipeline {
            }
             steps {
                 echo "Deploy to ${TEST_PROJECT} "
-                promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'fisuser-service',params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.TEST_PROJECT)    
+                promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'fisuser-service',params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.TEST_PROJECT)
                 setEnvForDBModule(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'fisuser-service', params.TEST_PROJECT,  params.MYSQL_USER, params.MYSQL_PWD)
                 promoteService(params.IMAGE_NAMESPACE, params.TEST_PROJECT, 'fisuser-service', env.srcTag, env.destTag)
             }
@@ -221,7 +221,7 @@ pipeline {
            when {
                expression {
                    ((env.userSelModule == 'UI' || env.userSelModule == 'All' || params.SELECT_BUILD_MODULE == false)
-                        && params.SELECT_DEPLOY_TO_PROD == false) 
+                        && params.SELECT_DEPLOY_TO_PROD == false)
                }
            }
             steps {
@@ -231,7 +231,41 @@ pipeline {
             }
         }
 
+  	 stage('Test-Env smoke-test') {
+            when {
+                expression {
+                    params.SELECT_DEPLOY_TO_PROD == false
+                }
+            }
+            steps {
+                script {
+                    sh "oc project ${TEST_PROJECT}"
+                    serviceName = 'maingateway-service'
+                    smokeTestOperation='cicd/maingateway/profile/11111?alertType=ACCIDENT'
+                    makeGetRequest("http://${serviceName}/${smokeTestOperation}")
+
+
+                    serviceName = 'fisuser-service'
+                    smokeTestOperation='cicd/user/profile/11111'
+                    makeGetRequest("http://${serviceName}/${smokeTestOperation}")
+
+                    serviceName = 'fisalert-service'
+                    smokeTestOperation='cicd/alert'
+                    body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
+                    makePostRequest("http://${serviceName}/${smokeTestOperation}", body,'POST')
+
+                    serviceName = 'nodejsalert-ui'
+                    makeGetRequest("http://${serviceName}:8080")
+                }
+            }
+        }
+
 	stage('3scale Publish API to Test') {
+          when {
+                expression {
+                    params.SELECT_DEPLOY_TO_PROD == false
+                }
+            }
 		steps {
 		 script {
 			def envName = params.TEST_PROJECT
@@ -240,36 +274,36 @@ pipeline {
 			def backendServiceSwaggerEndpoint=params.SWAGGER_FILE_NAME
 			def endpoint= params.END_POINT
 			def sandbox_endpoint= params.SANDBOX_END_POINT
-			def serviceSystemName=params.OPENSHIFT_SERVICE_NAME+"-"+envName.toLowerCase() 
-			def app_name= 'maingateway-service' 
+			def serviceSystemName=params.OPENSHIFT_SERVICE_NAME
+			def app_name= 'maingateway-service'
 			def backend_service = sh(script: "oc get route ${app_name} -o jsonpath=\'{.spec.host}\' -n ${envName}", returnStdout: true)
 			def targetPort = sh(script: "oc get route ${app_name} -o jsonpath=\'{.spec.port.targetPort}\' -n ${envName}", returnStdout: true)
-			backend_service=  targetPort+"://"+backend_service
-			println "${backend_service} "   
+			backend_service=  "http://"+backend_service
+			println "${backend_service} "
 			publish3scaleService(adminBaseUrl,token, backendServiceSwaggerEndpoint,serviceSystemName, endpoint, backend_service,sandbox_endpoint,envName)
-				
+
 			}
 		}
 	}
-      
-        
+
+
         stage('Wait for user to select module to push to production.') {
             when {
                 expression {
                     params.SELECT_DEPLOY_TO_PROD == true
                 }
-            }   
+            }
             steps {
                 script {
                     try {
                         timeout (time:2, unit:'HOURS') {
                             env.userProdApproval = input(id: 'userInput', message: "Do you approve this build to promote to production? Selected build [" +  env.userSelModule + "]?")
                             env.userProdApproval = 'Approved'
-                        } 
+                        }
                     } catch (exception) {
-                      env.userProdApproval='---'    
+                      env.userProdApproval='---'
                     }
-        
+
                     println("User approval to production " + env.userProdApproval);
                 }
             }
@@ -286,7 +320,7 @@ pipeline {
             }
             steps {
                 echo "Deploy to ${PROD_PROJECT} "
-                
+
                 promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'maingateway-service',params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.PROD_PROJECT)
                 promoteService(params.IMAGE_NAMESPACE, params.PROD_PROJECT, 'maingateway-service',  env.srcTag, env.destTag)
             }
@@ -304,7 +338,7 @@ pipeline {
             steps {
                 echo "Deploy to ${PROD_PROJECT} "
                 promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'fisuser-service',params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.PROD_PROJECT)
-                setEnvForDBModule(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'fisuser-service', params.PROD_PROJECT,  params.MYSQL_USER, params.MYSQL_PWD)                
+                setEnvForDBModule(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'fisuser-service', params.PROD_PROJECT,  params.MYSQL_USER, params.MYSQL_PWD)
                 promoteService(params.IMAGE_NAMESPACE, params.PROD_PROJECT, 'fisuser-service', env.srcTag, env.destTag)
             }
         }
@@ -341,12 +375,41 @@ pipeline {
             }
         }
 
+	 stage('Prod-Env smoke-test') {
+            when {
+                expression {
+                   env.userProdApproval == 'Approved'
+                }
+            }
+            steps {
+                script {
+		    sh "oc project ${PROD_PROJECT}"
+                    serviceName = 'maingateway-service'
+                    smokeTestOperation='cicd/maingateway/profile/11111?alertType=ACCIDENT'
+                    makeGetRequest("http://${serviceName}/${smokeTestOperation}")
+
+
+                    serviceName = 'fisuser-service'
+                    smokeTestOperation='cicd/user/profile/11111'
+                    makeGetRequest("http://${serviceName}/${smokeTestOperation}")
+
+                    serviceName = 'fisalert-service'
+                    smokeTestOperation='cicd/alert'
+                    body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
+                    makePostRequest("http://${serviceName}/${smokeTestOperation}", body,'POST')
+
+                    serviceName = 'nodejsalert-ui'
+                    makeGetRequest("http://${serviceName}:8080")
+                }
+            }
+        }
+
 	stage('3scale Publish API to Prod') {
 	 when {
                  expression {
-                    params.SELECT_DEPLOY_TO_PROD == true
+                     env.userProdApproval == 'Approved'
                 }
-            }   
+            }
 	steps {
 		script {
 			def envName = params.PROD_PROJECT
@@ -355,23 +418,23 @@ pipeline {
 			def backendServiceSwaggerEndpoint=params.SWAGGER_FILE_NAME
 			def endpoint= params.END_POINT
 			def sandbox_endpoint= params.SANDBOX_END_POINT
-			def serviceSystemName=params.OPENSHIFT_SERVICE_NAME+"-"+envName.toLowerCase() 
-			def app_name= 'maingateway-service' 
+			def serviceSystemName=params.OPENSHIFT_SERVICE_NAME
+			def app_name= 'maingateway-service'
 			def backend_service = sh(script: "oc get route ${app_name} -o jsonpath=\'{.spec.host}\' -n ${envName}", returnStdout: true)
 			def targetPort = sh(script: "oc get route ${app_name} -o jsonpath=\'{.spec.port.targetPort}\' -n ${envName}", returnStdout: true)
-			backend_service=  targetPort+"://"+backend_service
-			println "${backend_service} "   
+			backend_service=  "http://"+backend_service
+			println "${backend_service} "
 			publish3scaleService(adminBaseUrl,token, backendServiceSwaggerEndpoint,serviceSystemName, endpoint, backend_service,sandbox_endpoint,envName)
-				
+
 		}
 	   }
 	}
-     
+
     }
 }
 def setEnvForDBModule(openShiftHost, openShiftToken, svcName, projName, mysqlUser, mysqlPwd) {
     try {
-    sh """ 
+    sh """
         oc set env dc ${svcName} MYSQL_SERVICE_NAME=mysql -n ${projName} 2> /dev/null
         oc set env dc ${svcName} MYSQL_SERVICE_USERNAME=${mysqlUser} -n ${projName} 2> /dev/null
         oc set env dc ${svcName} MYSQL_SERVICE_PASSWORD=${mysqlPwd} -n ${projName} 2> /dev/null
@@ -392,12 +455,12 @@ def promoteServiceSetup(openShiftHost, openShiftToken, svcName,registry,imageNam
         echo "skip dc/svc/route cleanup related exception, the resource may not exist. " + e.getMessage();
     }
     try {
-        sh """ 
-            oc create dc ${svcName} --image=${registry}/${imageNameSpace}/${svcName}:${tagName} -n ${projName} 2> /dev/null     
-            oc set env dc ${svcName} APP_NAME=${svcName} -n ${projName} 2> /dev/null 
-            oc rollout cancel dc ${svcName} -n ${projName} 2> /dev/null 
-            oc expose dc ${svcName} --port=8080 -n ${projName} 2> /dev/null 
-            oc expose svc ${svcName} --name=${svcName} -n ${projName} 2> /dev/null 
+        sh """
+            oc create dc ${svcName} --image=${registry}/${imageNameSpace}/${svcName}:${tagName} -n ${projName} 2> /dev/null
+            oc set env dc ${svcName} APP_NAME=${svcName} -n ${projName} 2> /dev/null
+            oc rollout cancel dc ${svcName} -n ${projName} 2> /dev/null
+            oc expose dc ${svcName} --port=8080 -n ${projName} 2> /dev/null
+            oc expose svc ${svcName} --name=${svcName} -n ${projName} 2> /dev/null
         """
     } catch (Exception e) {
       echo "skip dc/svc/route creation related exception, the resource may already exist. " + e.getMessage();
@@ -426,8 +489,8 @@ def build(folderName) {
     sh """
 
     cd ${folderName}
-    
-    mvn package -Dmaven.test.skip=true 
+
+    mvn package -Dmaven.test.skip=true
     """
 
 }
@@ -435,7 +498,7 @@ def deploy(folderName, projName, openShiftHost, openShiftToken, mysqlUser, mysql
     sh """
     cd ${folderName}
 
-    oc project ${projName} 
+    oc project ${projName}
 
     mvn fabric8:deploy -Dmaven.test.skip=true -Dmysql-service-username=${mysqlUser} -Dmysql-service-password=${mysqlPwd}
     """
@@ -466,7 +529,7 @@ def makePostRequest(url, body, method) {
 
 //////// 3scale API Publishing ////////////////////////////
 import groovy.json.JsonOutput
-import groovy.json.JsonSlurperClassic 
+import groovy.json.JsonSlurperClassic
 import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.HttpsURLConnection
 import javax.net.ssl.SSLContext
@@ -485,19 +548,24 @@ def publish3scaleService(
 		String sandbox_endpoint,
 		String envName) {
 
-	def jsonSlurper = new JsonSlurperClassic()
-	def servicesEndpoint = "${adminBaseUrl}/admin/api/services.json?access_token=${token}"
-	def services =  jsonSlurper.parseText(new URL(servicesEndpoint).getText()).services
-	if(services.find { it.service['system_name'] == serviceSystemName }){
-        	def serviceJson= services.find { it.service['system_name'] == serviceSystemName}                
-        	def serviceid=serviceJson.service.id                  
+    def jsonSlurper = new JsonSlurperClassic()
+    def servicesEndpoint = "${adminBaseUrl}/admin/api/services.json?access_token=${token}"
+    def services =  jsonSlurper.parseText(new URL(servicesEndpoint).getText()).services
+    def swaggerDoc = jsonSlurper.parseText(new URL(backendServiceSwaggerEndpoint).getText())
+    def name = swaggerDoc.info.title != null ? swaggerDoc.info.title : serviceSystemName
+    def api_version=swaggerDoc.info.version
+    def api_major_version= api_version.split("\\.")[0];
+    println ("Major Version ="+api_major_version);
+    serviceSystemName=serviceSystemName+"_"+envName.toLowerCase()+"_"+ api_major_version
+    if(services.find { it.service['system_name'] == serviceSystemName }){
+        	def serviceJson= services.find { it.service['system_name'] == serviceSystemName}
+        	def serviceid=serviceJson.service.id
         	UpdateService(adminBaseUrl,token,backendServiceSwaggerEndpoint,serviceSystemName,endpoint,api_backend,sandbox_endpoint,envName,serviceid,jsonSlurper)
         }else{
 		createNewService(adminBaseUrl,token,backendServiceSwaggerEndpoint,serviceSystemName,endpoint,api_backend,sandbox_endpoint,envName,jsonSlurper)
         }
-
-	
 }
+
 def createNewService(
         String adminBaseUrl,
 		String token,
@@ -508,21 +576,21 @@ def createNewService(
 		String sandbox_endpoint,
 		String envName,
 		JsonSlurperClassic jsonSlurper){
-    
+
 	println('Fetching service swagger json...')
 	def swaggerDoc = jsonSlurper.parseText(new URL(backendServiceSwaggerEndpoint).getText())
 	println('Creating Service...')
 	def activeDocSpecCreateUrl = "${adminBaseUrl}/admin/api/services.json"
 	def name = swaggerDoc.info.title != null ? swaggerDoc.info.title : serviceSystemName
 	def api_version=swaggerDoc.info.version
-	name=name + "(" +envName+", v"+api_version+")" 
-	
+	name=name + "(" +envName+", v"+api_version+")"
+
 	def data = "access_token=${token}&name=${name}&system_name=${serviceSystemName}"
 	def responseBody=makeRequestwithBody(activeDocSpecCreateUrl, data, 'POST')
 	def serviceresponse = jsonSlurper.parseText(responsbody)
 	def serviceid = serviceresponse.service.id
 	println("Service Id = "+serviceid);
-	
+
 	println('Creating application_plans...')
 	def serviceurl =adminBaseUrl+"/admin/api/services/";
 	def apiurl = serviceurl+serviceid+"/application_plans.json";
@@ -539,18 +607,18 @@ def createNewService(
 
 		metricId= mapserviceresponse.metrics[0].metric.id
 
-        }  
+        }
 	println("metricId = "+metricId);
 
 	println("creating API limit");
 	def period="minute"
 	def periodValue=100
-	serviceurl =adminBaseUrl+"/admin/api/application_plans/";	
+	serviceurl =adminBaseUrl+"/admin/api/application_plans/";
 	apiurl = serviceurl+application_plan_id+"/metrics/"+metricId+"/limits.json";
 	data = "access_token=${token}&period=${period}&value=${periodValue}"
 	responseBody=makeRequestwithBody(apiurl, data, 'POST')
 	serviceresponse = jsonSlurper.parseText(responsbody)
-      
+
 	println('fetching account details')
   	serviceurl =adminBaseUrl+"/admin/api/accounts.json";
 	apiurl = serviceurl
@@ -562,30 +630,30 @@ def createNewService(
 
 	 	accountId= mapserviceresponse.accounts[0].account.id
 	 	org_name= mapserviceresponse.accounts[0].account.org_name
-	}  
+	}
 	println("account id = "+accountId);
-   
+
 	println('Creating application...')
 	serviceurl = adminBaseUrl+"/admin/api/accounts/";
 	apiurl = serviceurl+accountId+"/applications.json";
 	data = "access_token=${token}&plan_id=${application_plan_id}&name=${serviceSystemName+"App"}&description=testfuse"
 	responseBody=makeRequestwithBody(apiurl, data, 'POST')
 	serviceresponse = jsonSlurper.parseText(responsbody)
-    
+
 	println('Creating Proxy Setting...')
 	serviceurl = adminBaseUrl+"/admin/api/services/";
 	apiurl = serviceurl+serviceid+"/proxy.json";
 	data = "access_token=${token}&endpoint=${URLEncoder.encode(endpoint, 'UTF-8')}&api_backend=${URLEncoder.encode(api_backend, 'UTF-8')}&sandbox_endpoint=${URLEncoder.encode(sandbox_endpoint, 'UTF-8')}"
 	responseBody=makeRequestwithBody(apiurl, data, 'PATCH')
 	serviceresponse = jsonSlurper.parseText(responsbody)
-     
+
 	serviceurl = adminBaseUrl+"/admin/api/services/";
 	apiurl = serviceurl+serviceid+"/proxy/configs/sandbox/latest.json";
 	responseBody=makeGetRequest(apiurl+"?access_token=${token}")
 	serviceresponse = jsonSlurper.parseText(responsbody)
 	def version = serviceresponse.proxy_config.version
-	println('current version is....'+version)	
-   
+	println('current version is....'+version)
+
 	println('Promte to Production...')
 	serviceurl = adminBaseUrl+"/admin/api/services/";
 	apiurl = serviceurl+serviceid+"/proxy/configs/sandbox/"+version+"/promote.json";
@@ -593,28 +661,28 @@ def createNewService(
 	responseBody=makeRequestwithBody(apiurl, data, 'POST')
 	serviceresponse = jsonSlurper.parseText(responsbody)
 
-	println('Creates a method under a metric....')  
+	println('Creates a method under a metric....')
 	def paths = swaggerDoc.paths.keySet() as List
 	paths.each { path ->
 		def methods = swaggerDoc.paths[path].keySet() as List
 		methods.each {
-			
+
 		friendly_name=swaggerDoc.paths[path][it].operationId
                 serviceurl = adminBaseUrl+"/admin/api/services/";
    				apiurl = serviceurl+serviceid+"/metrics/"+metricId+"/methods.json";
         	data = "access_token=${token}&friendly_name=${friendly_name}&unit=String"
                 responseBody=makeRequestwithBody(apiurl, data, 'POST')
                 serviceresponse = jsonSlurper.parseText(responsbody)
-     		
+
 		            }
                   }
 
-	println('Creates a Proxy Mapping Rule.....')  
-	http_method ="GET"     
+	println('Creates a Proxy Mapping Rule.....')
+	http_method ="GET"
 	def basepath=swaggerDoc.basePath
 	paths = swaggerDoc.paths.keySet() as List
 	paths.each { pattern ->
-	       
+
 		serviceurl = adminBaseUrl+"/admin/api/services/";
 		apiurl = serviceurl+serviceid+"/proxy/mapping_rules.json";
 		data = "access_token=${token}&http_method=${http_method}&pattern=${basepath}${pattern}&delta=1&metric_id=${metricId}'"
@@ -622,10 +690,10 @@ def createNewService(
 		serviceresponse = jsonSlurper.parseText(responsbody)
 		}
 
-	update3scaleActiveDoc(adminBaseUrl,token,endpoint,backendServiceSwaggerEndpoint,serviceSystemName,jsonSlurper) 
-      
+	update3scaleActiveDoc(adminBaseUrl,token,endpoint,backendServiceSwaggerEndpoint,serviceSystemName,jsonSlurper)
+
 }
-  
+
 def UpdateService(String adminBaseUrl,
 		String token,
 		String backendServiceSwaggerEndpoint,
@@ -636,17 +704,17 @@ def UpdateService(String adminBaseUrl,
         	String envName,
         	int serviceid,
 		JsonSlurperClassic jsonSlurper  ){
-   
-	
+
+
 	def swaggerDoc = jsonSlurper.parseText(new URL(backendServiceSwaggerEndpoint).getText())
 	println('updating Service...')
 	def name = swaggerDoc.info.title != null ? swaggerDoc.info.title : serviceSystemName
 	def api_version=swaggerDoc.info.version
-	name=name + "(" +envName+", v"+api_version+")" 
+	name=name + "(" +envName+", v"+api_version+")"
 	def apiurl = "${adminBaseUrl}/admin/api/services/"+serviceid+".json"
 	def data = "access_token=${token}&name=${name}"
 	def responseBody=makeRequestwithBody(apiurl, data, 'PUT')
-	
+
 	println('updating Proxy Setting...')
 	serviceurl = adminBaseUrl+"/admin/api/services/";
 	apiurl = serviceurl+serviceid+"/proxy.json";
@@ -658,7 +726,7 @@ def UpdateService(String adminBaseUrl,
 	responseBody=makeGetRequest(apiurl+"?access_token=${token}")
 	Map mapserviceresponse = jsonSlurper.parseText(responsbody)
 	def version = mapserviceresponse.proxy_config.version
-	println(' version is....'+version)	
+	println(' version is....'+version)
 
 	serviceurl = adminBaseUrl+"/admin/api/services/";
 	apiurl = serviceurl+serviceid+"/proxy/configs/production/latest.json";
@@ -666,14 +734,14 @@ def UpdateService(String adminBaseUrl,
 	mapserviceresponse = jsonSlurper.parseText(responsbody)
 	//println(serviceresponse);
 	def production_version = mapserviceresponse.proxy_config.version
-	println(' production_version is....'+production_version)	
+	println(' production_version is....'+production_version)
 	if (production_version!=version){
     		println('Promte to Production...')
 		serviceurl = adminBaseUrl+"/admin/api/services/";
 		apiurl = serviceurl+serviceid+"/proxy/configs/sandbox/"+version+"/promote.json";
 		data = "access_token=${token}&to=production"
 		responseBody=makeRequestwithBody(apiurl, data, 'POST')
-		serviceresponse = jsonSlurper.parseText(responsbody) 
+		serviceresponse = jsonSlurper.parseText(responsbody)
 	}
 
 	serviceurl =adminBaseUrl+"/admin/api/services/"+serviceid+"/metrics.json";
@@ -682,7 +750,7 @@ def UpdateService(String adminBaseUrl,
 	def metricId
 	if(mapserviceresponse.metrics){
 		metricId= mapserviceresponse.metrics[0].metric.id
-	}  
+	}
 
 	println("metricId = "+metricId);
 	serviceurl = adminBaseUrl+"/admin/api/services/";
@@ -690,7 +758,7 @@ def UpdateService(String adminBaseUrl,
 	responseBody=makeGetRequest(apiurl+"?access_token=${token}")
 	ArrayList serviceresponseList = jsonSlurper.parseText(responsbody).methods
 
-	println('updates methods under a metric....')  
+	println('updates methods under a metric....')
 	def paths = swaggerDoc.paths.keySet() as List
 	paths.each { path ->
 		def methods = swaggerDoc.paths[path].keySet() as List
@@ -707,7 +775,7 @@ def UpdateService(String adminBaseUrl,
 			}
 		}
 
-	 update3scaleActiveDoc(adminBaseUrl,token,endpoint,backendServiceSwaggerEndpoint,serviceSystemName,jsonSlurper) 
+	 update3scaleActiveDoc(adminBaseUrl,token,endpoint,backendServiceSwaggerEndpoint,serviceSystemName,jsonSlurper)
 
 
 }
@@ -775,8 +843,6 @@ def update3scaleActiveDoc(
 	}
 }
 
-
-
 def makeGetRequest(url) {
         println(url)
 	def get = new URL(url).openConnection();
@@ -795,14 +861,14 @@ def makeGetRequest(url) {
 }
 
 def  makeRequestwithBody(url, body, method) {
-  
-	println(url)  
-	println(body)  
+
+	println(url)
+	println(body)
 	def post = new URL(url).openConnection();
 	post.setRequestMethod("POST")
 	post.setDoOutput(true)
 	post.setRequestProperty('Content-Type', 'application/x-www-form-urlencoded')
-	if(method!="POST"){  
+	if(method!="POST"){
 		post.setRequestProperty("X-HTTP-Method-Override", method);
 	 }
 	post.getOutputStream().write(body.getBytes("UTF-8"));
@@ -811,6 +877,7 @@ def  makeRequestwithBody(url, body, method) {
 	if (postRC != 200 && postRC != 201) {
 	   println('Failed to update/create . HTTP response: ' + postRC)
 		responsbody=post.getInputStream().getText()
+		println(post.getInputStream().getText());
 		assert false
 	} else {
 		println('created successfully!')
@@ -822,4 +889,3 @@ def  makeRequestwithBody(url, body, method) {
 
 
 ///////////end of 3scale ////////////////////////////////////
-
