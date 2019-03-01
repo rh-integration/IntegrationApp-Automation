@@ -171,7 +171,7 @@ def promoteBlueGreenServiceSetup(openShiftHost, openShiftToken, svcName, registr
             oc create dc ${svcName}-${tagName} --image=${registry}/${imageNameSpace}/${svcName}:${tagName} -n ${projName} 2> /dev/null 
             oc set env dc ${svcName}-${tagName} APP_NAME=${svcName} -n ${projName}  2> /dev/null
             oc rollout cancel dc ${svcName}-${tagName} -n ${projName}  2> /dev/null
-            oc expose dc ${svcName}-${tagName} --name=${svcName}-green --port=8080 -n ${projName}  2> /dev/null
+            oc expose dc ${svcName}-${tagName} --name=${svcName}-green --type=ClusterIP --port=80 --protocol=TCP --target-port=8080 -n ${projName}  2> /dev/null
             echo "Finished creation"
         """
     } catch (Exception e) {
@@ -191,7 +191,7 @@ def promoteServiceSetup(openShiftHost, openShiftToken, svcName, registry, imageN
             oc create dc ${svcName} --image=${registry}/${imageNameSpace}/${svcName}:${tagName} -n ${projName} 2> /dev/null 
             oc set env dc ${svcName} APP_NAME=${svcName} -n ${projName} 2> /dev/null
             oc rollout cancel dc ${svcName} -n ${projName}  2> /dev/null
-            oc expose dc ${svcName} --port=8080 -n ${projName}  2> /dev/null
+            oc expose dc ${svcName} --type=ClusterIP --port=80 --protocol=TCP --target-port=8080 -n ${projName}  2> /dev/null
             oc expose svc ${svcName} --name=${svcName} -n ${projName}  2> /dev/null
         """
     } catch (Exception e) {
