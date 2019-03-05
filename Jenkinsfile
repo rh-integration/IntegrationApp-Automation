@@ -174,6 +174,7 @@ pipeline {
            }
            steps {
                echo "Deploy to ${TEST_PROJECT} "
+               tagImage(params.IMAGE_NAMESPACE, params.TEST_PROJECT, 'maingateway-service', env.srcTag, env.destTag)
                promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'maingateway-service',params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.TEST_PROJECT)
                promoteService(params.IMAGE_NAMESPACE, params.TEST_PROJECT,'maingateway-service', env.srcTag, env.destTag)
            }
@@ -191,8 +192,9 @@ pipeline {
            }
             steps {
                 echo "Deploy to ${TEST_PROJECT} "
+                tagImage(params.IMAGE_NAMESPACE, params.TEST_PROJECT, 'fisuser-service', env.srcTag, env.destTag)
                 promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'fisuser-service',params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.TEST_PROJECT)
-                setEnvForDBModule(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'fisuser-service', params.TEST_PROJECT,  params.MYSQL_USER, params.MYSQL_PWD)
+                setEnvForDBModule(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'fisuser-service', params.TEST_PROJECT,params.MYSQL_USER, params.MYSQL_PWD)
                 promoteService(params.IMAGE_NAMESPACE, params.TEST_PROJECT, 'fisuser-service', env.srcTag, env.destTag)
             }
         }
@@ -209,6 +211,7 @@ pipeline {
            }
             steps {
                 echo "Deploy to ${TEST_PROJECT} "
+                tagImage(params.IMAGE_NAMESPACE, params.TEST_PROJECT, 'fisalert-service', env.srcTag, env.destTag)
                 promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'fisalert-service',params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.TEST_PROJECT)
                 promoteService(params.IMAGE_NAMESPACE, params.TEST_PROJECT, 'fisalert-service', env.srcTag, env.destTag)
             }
@@ -226,6 +229,7 @@ pipeline {
            }
             steps {
                 echo "Deploy to ${TEST_PROJECT} "
+                tagImage(params.IMAGE_NAMESPACE, params.TEST_PROJECT, 'nodejsalert-ui', env.srcTag, env.destTag)
                 promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'nodejsalert-ui',params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.TEST_PROJECT)
                 promoteService(params.IMAGE_NAMESPACE, params.TEST_PROJECT, 'nodejsalert-ui', env.srcTag, env.destTag)
             }
@@ -320,7 +324,7 @@ pipeline {
             }
             steps {
                 echo "Deploy to ${PROD_PROJECT} "
-
+                tagImage(params.IMAGE_NAMESPACE, params.PROD_PROJECT, 'maingateway-service', env.srcTag, env.destTag)
                 promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'maingateway-service',params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.PROD_PROJECT)
                 promoteService(params.IMAGE_NAMESPACE, params.PROD_PROJECT, 'maingateway-service',  env.srcTag, env.destTag)
             }
@@ -337,6 +341,7 @@ pipeline {
             }
             steps {
                 echo "Deploy to ${PROD_PROJECT} "
+                tagImage(params.IMAGE_NAMESPACE, params.PROD_PROJECT, 'fisuser-service', env.srcTag, env.destTag)
                 promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'fisuser-service',params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.PROD_PROJECT)
                 setEnvForDBModule(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'fisuser-service', params.PROD_PROJECT,  params.MYSQL_USER, params.MYSQL_PWD)
                 promoteService(params.IMAGE_NAMESPACE, params.PROD_PROJECT, 'fisuser-service', env.srcTag, env.destTag)
@@ -354,6 +359,7 @@ pipeline {
             }
             steps {
                 echo "Deploy to ${PROD_PROJECT} "
+                tagImage(params.IMAGE_NAMESPACE, params.PROD_PROJECT, 'fisalert-service', env.srcTag, env.destTag)
                 promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'fisalert-service',params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.PROD_PROJECT)
                 promoteService(params.IMAGE_NAMESPACE, params.PROD_PROJECT, 'fisalert-service', env.srcTag, env.destTag)
             }
@@ -370,6 +376,7 @@ pipeline {
             }
             steps {
                 echo "Deploy to ${PROD_PROJECT} "
+                tagImage(params.IMAGE_NAMESPACE, params.PROD_PROJECT, 'nodejsalert-ui', env.srcTag, env.destTag)
                 promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'nodejsalert-ui',params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.PROD_PROJECT)
                 promoteService(params.IMAGE_NAMESPACE, params.PROD_PROJECT, 'nodejsalert-ui', env.srcTag, env.destTag)
             }
@@ -434,13 +441,13 @@ pipeline {
 }
 def setEnvForDBModule(openShiftHost, openShiftToken, svcName, projName, mysqlUser, mysqlPwd) {
     try {
-    sh """
+    sh """ 
+        oc rollout pause dc ${svcName} -n ${projName} -n ${projName} 2> /dev/null
         oc set env dc ${svcName} MYSQL_SERVICE_NAME=mysql -n ${projName} 2> /dev/null
         oc set env dc ${svcName} MYSQL_SERVICE_USERNAME=${mysqlUser} -n ${projName} 2> /dev/null
         oc set env dc ${svcName} MYSQL_SERVICE_PASSWORD=${mysqlPwd} -n ${projName} 2> /dev/null
         oc set env dc ${svcName} JAVA_APP_DIR=/deployments -n ${projName} 2> /dev/null
-        oc rollout cancel dc ${svcName} -n ${projName} -n ${projName} 2> /dev/null
-
+        oc rollout resume dc ${svcName} -n ${projName} -n ${projName} 2> /dev/null
     """
     } catch (Exception e) {
       echo "skip the db environment variable setup, the resources may already exist. " + e.getMessage();
@@ -455,19 +462,21 @@ def promoteServiceSetup(openShiftHost, openShiftToken, svcName,registry,imageNam
         echo "skip dc/svc/route cleanup related exception, the resource may not exist. " + e.getMessage();
     }
     try {
-        sh """
-            oc create dc ${svcName} --image=${registry}/${imageNameSpace}/${svcName}:${tagName} -n ${projName} 2> /dev/null
-            oc set env dc ${svcName} APP_NAME=${svcName} -n ${projName} 2> /dev/null
-            oc rollout cancel dc ${svcName} -n ${projName} 2> /dev/null
-            oc expose dc ${svcName} --port=8080 -n ${projName} 2> /dev/null
-            oc expose svc ${svcName} --name=${svcName} -n ${projName} 2> /dev/null
+        sh """ 
+            oc create dc ${svcName} --image=${registry}/${imageNameSpace}/${svcName}:${tagName} -n ${projName} 2> /dev/null     
+            oc rollout pause dc ${svcName} -n ${projName} 2> /dev/null 
+            oc patch dc ${svcName} -p '{"spec": {"template": {"spec": {"containers": [{"name": "default-container","imagePullPolicy": "Always"}]}}}}' -n ${projName} 2> /dev/null
+            oc set env dc ${svcName} APP_NAME=${svcName} -n ${projName} 2> /dev/null 
+            oc rollout resume dc ${svcName} -n ${projName} 2> /dev/null 
+            oc expose dc ${svcName} --type=ClusterIP  --port=80 --protocol=TCP --target-port=8080 -n ${projName} 2> /dev/null
+            oc expose svc ${svcName} --name=${svcName} -n ${projName} 2> /dev/null 
         """
     } catch (Exception e) {
       echo "skip dc/svc/route creation related exception, the resource may already exist. " + e.getMessage();
     }
 
 }
-def promoteService (imageNamespace, projName, svcName, sourceTag, destinationTag) {
+def tagImage(imageNamespace, projName, svcName, sourceTag, destinationTag) {
     script {
          openshift.withCluster() {
              openshift.withProject( imageNamespace ) {
@@ -475,7 +484,11 @@ def promoteService (imageNamespace, projName, svcName, sourceTag, destinationTag
                  openshift.tag("${svcName}:${sourceTag}", "${svcName}:${destinationTag}")
              }
          }
-         echo "deploying the ${svcName} to ${projName} "
+     } 
+}
+def promoteService (imageNamespace, projName, svcName, sourceTag, destinationTag) {
+    script {
+        echo "deploying the ${svcName} to ${projName} "
          openshift.withCluster() {
              openshift.withProject( projName) {
                 def dply = openshift.selector("dc", svcName)
