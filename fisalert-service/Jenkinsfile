@@ -49,7 +49,7 @@ pipeline {
             steps {
                 script {
                     serviceName = 'fisalert-service'
-                    smokeTestOperation='cicd/alert'
+                    smokeTestOperation='cicd/alerts'
                     body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
                     makePostRequest("http://${serviceName}/${smokeTestOperation}", body,'POST')
                 }
@@ -80,7 +80,7 @@ pipeline {
             steps {
                 script {
                     serviceName = 'fisalert-service'
-                    smokeTestOperation='cicd/alert'
+                    smokeTestOperation='cicd/alerts'
                     body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
                     makePostRequest("http://${serviceName}/${smokeTestOperation}", body,'POST')
                 }
@@ -135,7 +135,7 @@ pipeline {
             steps {
                 script {
                     serviceName = 'fisalert-service'
-                    smokeTestOperation='cicd/alert'
+                    smokeTestOperation='cicd/alerts'
                     body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
                     makePostRequest("http://${serviceName}/${smokeTestOperation}", body,'POST')
                 }

@@ -17,14 +17,27 @@
         <property name="urlMappings" value="/cicd/*"/>
     </bean>
     <camelContext id="camel" xmlns="http://camel.apache.org/schema/spring">
-        <restConfiguration bindingMode="json" component="servlet" contextPath="/cicd"/>
-        <rest id="rest-4165eae8-c163-45b5-9cd3-ca6c8c3581e9" path="/user">
-            <get id="61d44cc3-dfc2-46c9-99bb-3d8cc221cdb8" uri="profile/{id}">
-                <to uri="direct:getprofile"/>
+        <restConfiguration apiContextPath="api-docs" bindingMode="json"
+            component="servlet" contextPath="/cicd" enableCORS="true">
+            <apiProperty key="cors" value="true"/>
+            <apiProperty key="api.title" value="User Service"/>
+            <apiProperty key="api.version" value="1.0.0"/>
+            <corsHeaders key="Access-Control-Allow-Origin" value="*"/>
+            <corsHeaders key="Access-Control-Allow-Methods" value="GET, HEAD, POST, PUT, DELETE, TRACE, OPTIONS, CONNECT, PATCH"/>
+            <corsHeaders key="Access-Control-Allow-Headers" value="Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers"/>
+        </restConfiguration>
+        <rest id="rest-f9f2d715-ba75-41da-9e1e-ad6cb486979e">
+            <get id="getProfile" uri="/users/profile/{id}">
+                <description>Get user information by User ID number</description>
+                <param dataType="string" description="user id number"
+                    name="id" required="true" type="path"/>
+                <to uri="direct:getProfile"/>
             </get>
         </rest>
         <route id="user profile route">
-            <from id="_from1" uri="direct:getprofile"/>
+            <!--             <to id="_to1" uri="sql:select * from userprofile where id=:#id?outputClass=com.redhat.myfispipeline.UserProfiles&amp;dataSource=dataSource&amp;outputType=SelectOne"/> -->
+            <!--              <to uri="bean:UserProfileList?method=get(0)"/> -->
+            <from id="_from1" uri="direct:getProfile"/>
             <log id="_log1" message="Profile ${headers.id}"/>
             <to id="_to1" uri="sql:select * from userprofile where id=:#id?outputClass=com.redhat.myfispipeline.UserProfiles&amp;dataSource=dataSource&amp;outputType=SelectOne"/>
             <log id="_log2" message="output: ${body}"/>

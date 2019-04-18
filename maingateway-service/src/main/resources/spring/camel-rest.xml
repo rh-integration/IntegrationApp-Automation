@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rests xmlns="http://camel.apache.org/schema/spring">
+    <rest id="rest-8d179769-5395-472c-ab84-7d880406b33c">
+        <get id="alertUser" uri="/maingateway/profile/{id}">
+            <description>Send the alert to user by providing user id and alert type</description>
+            <param dataType="string" description="user id number"
+                name="id" required="true" type="path"/>
+            <param dataType="string" description="The Type of alert"
+                name="alertType" required="true" type="header"/>
+            <to uri="direct:alertUser"/>
+        </get>
+    </rest>
+</rests>

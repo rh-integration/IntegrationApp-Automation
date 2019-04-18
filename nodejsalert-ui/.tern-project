@@ -1,0 +1,13 @@
+{
+  "plugins": {
+    "guess-types": {
+      
+    },
+    "outline": {
+      
+    }
+  },
+  "libs": [
+    "browser"
+  ]
+}

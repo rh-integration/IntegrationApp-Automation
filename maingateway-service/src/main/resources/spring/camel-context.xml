@@ -29,16 +29,18 @@
             <corsHeaders key="Access-Control-Allow-Methods" value="GET, HEAD, POST, PUT, DELETE, TRACE, OPTIONS, CONNECT, PATCH"/>
             <corsHeaders key="Access-Control-Allow-Headers" value="Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers"/>
         </restConfiguration>
-        <rest id="rest-537dace9-d0d1-4f4a-8e37-e10487da77e0" path="/maingateway">
-            <get id="598c8ced-6d12-4c4e-888b-dbfcda2ddc62" uri="profile/{acctid}">
-                <to uri="direct:getprofile"/>
-            </get>
-            <get id="d307968e-93bc-4850-8dc2-96a2f2f474fb" uri="logo">
-                <to uri="direct:getlogo"/>
+        <rest id="rest-8d179769-5395-472c-ab84-7d880406b33c">
+            <get id="alertUser" uri="/maingateway/profile/{id}">
+                <description>Send the alert to user by providing user id and alert type</description>
+                <param dataType="string" description="user id number"
+                    name="id" required="true" type="path"/>
+                <param dataType="string" description="The Type of alert"
+                    name="alertType" required="true" type="header"/>
+                <to uri="direct:alertUser"/>
             </get>
         </rest>
         <route id="gateway">
-            <from id="_to1" uri="direct:getprofile"/>
+            <from id="_to1" uri="direct:alertUser"/>
             <removeHeaders id="_removeHeaders1" pattern="Camel*"/>
             <setHeader headerName="CamelHttpMethod" id="_setHeader1">
                 <constant>GET</constant>
@@ -48,7 +50,7 @@
                     circuitBreakerSleepWindowInMilliseconds="10000" executionTimeoutInMilliseconds="5000"/>
                 <recipientList id="_userservice">
                     <!--                     <simple>http://fisuser-service-cicddemo.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com/cicd/user/profile/${header.acctid}?bridgeEndpoint=true</simple> -->
-                    <simple>http://fisuser-service/cicd/user/profile/${header.acctid}?bridgeEndpoint=true</simple>
+                    <simple>http://fisuser-service/cicd/users/profile/${header.id}?bridgeEndpoint=true</simple>
                 </recipientList>
                 <convertBodyTo id="_convertBodyTo1" type="java.lang.String"/>
                 <unmarshal id="_unmarshal1">
@@ -62,7 +64,7 @@
                 </setHeader>
                 <recipientList id="_alertservice">
                     <!--                     <simple>http://fisalert-service-cicddemo.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com/cicd/alert?bridgeEndpoint=true</simple> -->
-                    <simple>http://fisalert-service/cicd/alert?bridgeEndpoint=true</simple>
+                    <simple>http://fisalert-service/cicd/alerts?bridgeEndpoint=true</simple>
                 </recipientList>
                 <convertBodyTo id="_convertBodyTo2" type="java.lang.String"/>
                 <unmarshal id="_unmarshal2">

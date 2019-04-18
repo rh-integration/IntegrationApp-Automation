@@ -1,3 +1,11 @@
+#!groovy
+library identifier: '3scale-toolbox-jenkins@master', 
+        retriever: modernSCM([$class: 'GitSCMSource',
+                              remote: 'https://github.com/nmasse-itix/3scale-toolbox-jenkins.git'])
+
+
+def service = null
+
 pipeline {
     agent {
         node {
@@ -147,11 +155,11 @@ pipeline {
 
 
                     serviceName = 'fisuser-service'
-                    smokeTestOperation='cicd/user/profile/11111'
+                    smokeTestOperation='cicd/users/profile/11111'
                     makeGetRequest("http://${serviceName}/${smokeTestOperation}")
 
                     serviceName = 'fisalert-service'
-                    smokeTestOperation='cicd/alert'
+                    smokeTestOperation='cicd/alerts'
                     body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
                     makePostRequest("http://${serviceName}/${smokeTestOperation}", body,'POST')
 
@@ -250,11 +258,11 @@ pipeline {
 
 
                     serviceName = 'fisuser-service'
-                    smokeTestOperation='cicd/user/profile/11111'
+                    smokeTestOperation='cicd/users/profile/11111'
                     makeGetRequest("http://${serviceName}/${smokeTestOperation}")
 
                     serviceName = 'fisalert-service'
-                    smokeTestOperation='cicd/alert'
+                    smokeTestOperation='cicd/alerts'
                     body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
                     makePostRequest("http://${serviceName}/${smokeTestOperation}", body,'POST')
 
@@ -273,20 +281,77 @@ pipeline {
 		steps {
 		 script {
 			def envName = params.TEST_PROJECT
-			def token=params.API_TOKEN
-			def adminBaseUrl=params.THREESCALE_URL
 			def backendServiceSwaggerEndpoint=params.SWAGGER_FILE_NAME
 			def endpoint= params.END_POINT
 			def sandbox_endpoint= params.SANDBOX_END_POINT
-			def serviceSystemName=params.OPENSHIFT_SERVICE_NAME
-			def app_name= 'maingateway-service'
-			def backend_service = sh(script: "oc get route ${app_name} -o jsonpath=\'{.spec.host}\' -n ${envName}", returnStdout: true)
-			def targetPort = sh(script: "oc get route ${app_name} -o jsonpath=\'{.spec.port.targetPort}\' -n ${envName}", returnStdout: true)
-			backend_service=  "http://"+backend_service
-			println "${backend_service} "
-			publish3scaleService(adminBaseUrl,token, backendServiceSwaggerEndpoint,serviceSystemName, endpoint, backend_service,sandbox_endpoint,envName)
+			def serviceSystemName=params.API_BASE_SYSTEM_NAME
 
-			}
+			service = toolbox.prepareThreescaleService(
+			openapi: [filename: "cicd-3scale/3scaletoolbox/openapi-spec.json"],
+			environment: [baseSystemName: params.API_BASE_SYSTEM_NAME],
+			toolbox: [openshiftProject: params.DEV_PROJECT, destination: params.TARGET_INSTANCE, secretName: params.SECRET_NAME, insecure: true],
+			service: [:],
+			applicationPlans: [
+			  [ systemName: "test", name: "plan1", defaultPlan: true, published: true, costPerMonth:100, setupFee:10, trialPeriodDays:5],
+         		  [ systemName: "silver", name: "Silver", costPerMonth:100, setupFee:10, trialPeriodDays:5],
+          		  [ systemName: "gold", name: "Gold", costPerMonth:100, setupFee:10, trialPeriodDays:5 ],
+			]                                 )
+
+	    		echo "toolbox version = " + service.toolbox.getToolboxVersion()
+
+     		 }
+		}
+	}
+	stage("3scale Import OpenAPI") {
+		steps {
+		script {
+		    service.importOpenAPI()
+		    echo "Service with system_name ${service.environment.targetSystemName} created !"
+		 }
+		}
+	  }
+
+	  stage("3scale Create an Application Plan") {
+		steps {
+		script {
+		    service.applyApplicationPlans()
+		}
+	       }
+	  }
+
+	  stage("3scale Create an Application") {
+		steps {
+		script {
+		    def testApplication = [
+		      name: "my-test-app",
+		      description: "This is used for tests"
+		    ]
+
+		    def testApplicationCredentials = toolbox.getDefaultApplicationCredentials(service, testApplication.name)
+		    service.applyApplication(testApplication + testApplicationCredentials)
+		}
+	     }
+	  }
+
+	  stage("Run integration tests") {
+		steps {
+		script {
+		    // To run the integration tests when using APIcast SaaS instances, we need
+		    // to fetch the proxy definition to extract the staging public url
+		    def proxy = service.readProxy()
+		    sh '''set -xe
+		    curl ${proxy.sandbox_endpoint}/beers
+		    # TODO
+		    '''
+	 	}
+	     }
+	  }
+
+	stage("3scale Promote to production") {
+		steps {
+		script {
+		    service.promoteToProduction()
+		  }
 		}
 	}
 
@@ -397,11 +462,11 @@ pipeline {
 
 
                     serviceName = 'fisuser-service'
-                    smokeTestOperation='cicd/user/profile/11111'
+                    smokeTestOperation='cicd/users/profile/11111'
                     makeGetRequest("http://${serviceName}/${smokeTestOperation}")
 
                     serviceName = 'fisalert-service'
-                    smokeTestOperation='cicd/alert'
+                    smokeTestOperation='cicd/alerts'
                     body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
                     makePostRequest("http://${serviceName}/${smokeTestOperation}", body,'POST')
 
@@ -425,13 +490,13 @@ pipeline {
 			def backendServiceSwaggerEndpoint=params.SWAGGER_FILE_NAME
 			def endpoint= params.END_POINT
 			def sandbox_endpoint= params.SANDBOX_END_POINT
-			def serviceSystemName=params.OPENSHIFT_SERVICE_NAME
+			def serviceSystemName=params.API_BASE_SYSTEM_NAME
 			def app_name= 'maingateway-service'
 			def backend_service = sh(script: "oc get route ${app_name} -o jsonpath=\'{.spec.host}\' -n ${envName}", returnStdout: true)
 			def targetPort = sh(script: "oc get route ${app_name} -o jsonpath=\'{.spec.port.targetPort}\' -n ${envName}", returnStdout: true)
 			backend_service=  "http://"+backend_service
 			println "${backend_service} "
-			publish3scaleService(adminBaseUrl,token, backendServiceSwaggerEndpoint,serviceSystemName, endpoint, backend_service,sandbox_endpoint,envName)
+			//publish3scaleService(adminBaseUrl,token, backendServiceSwaggerEndpoint,serviceSystemName, endpoint, backend_service,sandbox_endpoint,envName)
 
 		}
 	   }
@@ -540,321 +605,7 @@ def makePostRequest(url, body, method) {
 	}
 }
 
-//////// 3scale API Publishing ////////////////////////////
-import groovy.json.JsonOutput
-import groovy.json.JsonSlurperClassic
-import javax.net.ssl.HostnameVerifier
-import javax.net.ssl.HttpsURLConnection
-import javax.net.ssl.SSLContext
-import javax.net.ssl.TrustManager
-import javax.net.ssl.X509TrustManager
-import java.security.SecureRandom
-import java.net.URLEncoder
 
-def publish3scaleService(
-		String adminBaseUrl,
-		String token,
-		String backendServiceSwaggerEndpoint,
-		String serviceSystemName,
-		String endpoint,
-		String api_backend,
-		String sandbox_endpoint,
-		String envName) {
-
-    def jsonSlurper = new JsonSlurperClassic()
-    def servicesEndpoint = "${adminBaseUrl}/admin/api/services.json?access_token=${token}"
-    def services =  jsonSlurper.parseText(new URL(servicesEndpoint).getText()).services
-    def swaggerDoc = jsonSlurper.parseText(new URL(backendServiceSwaggerEndpoint).getText())
-    def name = swaggerDoc.info.title != null ? swaggerDoc.info.title : serviceSystemName
-    def api_version=swaggerDoc.info.version
-    def api_major_version= api_version.split("\\.")[0];
-    println ("Major Version ="+api_major_version);
-    serviceSystemName=serviceSystemName+"_"+envName.toLowerCase()+"_"+ api_major_version
-    if(services.find { it.service['system_name'] == serviceSystemName }){
-        	def serviceJson= services.find { it.service['system_name'] == serviceSystemName}
-        	def serviceid=serviceJson.service.id
-        	UpdateService(adminBaseUrl,token,backendServiceSwaggerEndpoint,serviceSystemName,endpoint,api_backend,sandbox_endpoint,envName,serviceid,jsonSlurper)
-        }else{
-		createNewService(adminBaseUrl,token,backendServiceSwaggerEndpoint,serviceSystemName,endpoint,api_backend,sandbox_endpoint,envName,jsonSlurper)
-        }
-}
-
-def createNewService(
-        String adminBaseUrl,
-		String token,
-		String backendServiceSwaggerEndpoint,
-		String serviceSystemName,
-		String endpoint,
-		String api_backend,
-		String sandbox_endpoint,
-		String envName,
-		JsonSlurperClassic jsonSlurper){
-
-	println('Fetching service swagger json...')
-	def swaggerDoc = jsonSlurper.parseText(new URL(backendServiceSwaggerEndpoint).getText())
-	println('Creating Service...')
-	def activeDocSpecCreateUrl = "${adminBaseUrl}/admin/api/services.json"
-	def name = swaggerDoc.info.title != null ? swaggerDoc.info.title : serviceSystemName
-	def api_version=swaggerDoc.info.version
-	name=name + "(" +envName+", v"+api_version+")"
-
-	def data = "access_token=${token}&name=${name}&system_name=${serviceSystemName}"
-	def responseBody=makeRequestwithBody(activeDocSpecCreateUrl, data, 'POST')
-	def serviceresponse = jsonSlurper.parseText(responsbody)
-	def serviceid = serviceresponse.service.id
-	println("Service Id = "+serviceid);
-
-	println('Creating application_plans...')
-	def serviceurl =adminBaseUrl+"/admin/api/services/";
-	def apiurl = serviceurl+serviceid+"/application_plans.json";
-	data = "access_token=${token}&name=test&system_name=${serviceSystemName}"
-	responseBody=makeRequestwithBody(apiurl, data, 'POST')
-	serviceresponse = jsonSlurper.parseText(responsbody)
-	def application_plan_id = serviceresponse.application_plan.id
-
-        serviceurl =adminBaseUrl+"/admin/api/services/"+serviceid+"/metrics.json";
-        responseBody=makeGetRequest(serviceurl+"?access_token=${token}")
-        Map mapserviceresponse = jsonSlurper.parseText(responsbody)
-        def metricId
-        if(mapserviceresponse.metrics){
-
-		metricId= mapserviceresponse.metrics[0].metric.id
-
-        }
-	println("metricId = "+metricId);
-
-	println("creating API limit");
-	def period="minute"
-	def periodValue=100
-	serviceurl =adminBaseUrl+"/admin/api/application_plans/";
-	apiurl = serviceurl+application_plan_id+"/metrics/"+metricId+"/limits.json";
-	data = "access_token=${token}&period=${period}&value=${periodValue}"
-	responseBody=makeRequestwithBody(apiurl, data, 'POST')
-	serviceresponse = jsonSlurper.parseText(responsbody)
-
-	println('fetching account details')
-  	serviceurl =adminBaseUrl+"/admin/api/accounts.json";
-	apiurl = serviceurl
-	responseBody=makeGetRequest(apiurl+"?access_token=${token}")
-	mapserviceresponse = jsonSlurper.parseText(responsbody)
-	def accountId
-	def org_name;
-	if(mapserviceresponse.accounts){
-
-	 	accountId= mapserviceresponse.accounts[0].account.id
-	 	org_name= mapserviceresponse.accounts[0].account.org_name
-	}
-	println("account id = "+accountId);
-
-	println('Creating application...')
-	serviceurl = adminBaseUrl+"/admin/api/accounts/";
-	apiurl = serviceurl+accountId+"/applications.json";
-	data = "access_token=${token}&plan_id=${application_plan_id}&name=${serviceSystemName+"App"}&description=testfuse"
-	responseBody=makeRequestwithBody(apiurl, data, 'POST')
-	serviceresponse = jsonSlurper.parseText(responsbody)
-
-	println('Creating Proxy Setting...')
-	serviceurl = adminBaseUrl+"/admin/api/services/";
-	apiurl = serviceurl+serviceid+"/proxy.json";
-	data = "access_token=${token}&endpoint=${URLEncoder.encode(endpoint, 'UTF-8')}&api_backend=${URLEncoder.encode(api_backend, 'UTF-8')}&sandbox_endpoint=${URLEncoder.encode(sandbox_endpoint, 'UTF-8')}"
-	responseBody=makeRequestwithBody(apiurl, data, 'PATCH')
-	serviceresponse = jsonSlurper.parseText(responsbody)
-
-	serviceurl = adminBaseUrl+"/admin/api/services/";
-	apiurl = serviceurl+serviceid+"/proxy/configs/sandbox/latest.json";
-	responseBody=makeGetRequest(apiurl+"?access_token=${token}")
-	serviceresponse = jsonSlurper.parseText(responsbody)
-	def version = serviceresponse.proxy_config.version
-	println('current version is....'+version)
-
-	println('Promte to Production...')
-	serviceurl = adminBaseUrl+"/admin/api/services/";
-	apiurl = serviceurl+serviceid+"/proxy/configs/sandbox/"+version+"/promote.json";
-	data = "access_token=${token}&to=production"
-	responseBody=makeRequestwithBody(apiurl, data, 'POST')
-	serviceresponse = jsonSlurper.parseText(responsbody)
-
-	println('Creates a method under a metric....')
-	def paths = swaggerDoc.paths.keySet() as List
-	paths.each { path ->
-		def methods = swaggerDoc.paths[path].keySet() as List
-		methods.each {
-
-		friendly_name=swaggerDoc.paths[path][it].operationId
-                serviceurl = adminBaseUrl+"/admin/api/services/";
-   				apiurl = serviceurl+serviceid+"/metrics/"+metricId+"/methods.json";
-        	data = "access_token=${token}&friendly_name=${friendly_name}&unit=String"
-                responseBody=makeRequestwithBody(apiurl, data, 'POST')
-                serviceresponse = jsonSlurper.parseText(responsbody)
-
-		            }
-                  }
-
-	println('Creates a Proxy Mapping Rule.....')
-	http_method ="GET"
-	def basepath=swaggerDoc.basePath
-	paths = swaggerDoc.paths.keySet() as List
-	paths.each { pattern ->
-
-		serviceurl = adminBaseUrl+"/admin/api/services/";
-		apiurl = serviceurl+serviceid+"/proxy/mapping_rules.json";
-		data = "access_token=${token}&http_method=${http_method}&pattern=${basepath}${pattern}&delta=1&metric_id=${metricId}'"
-		responseBody=makeRequestwithBody(apiurl, data, 'POST')
-		serviceresponse = jsonSlurper.parseText(responsbody)
-		}
-
-	update3scaleActiveDoc(adminBaseUrl,token,endpoint,backendServiceSwaggerEndpoint,serviceSystemName,jsonSlurper)
-
-}
-
-def UpdateService(String adminBaseUrl,
-		String token,
-		String backendServiceSwaggerEndpoint,
-		String serviceSystemName,
-		String endpoint,
-		String api_backend,
-		String sandbox_endpoint,
-        	String envName,
-        	int serviceid,
-		JsonSlurperClassic jsonSlurper  ){
-
-
-	def swaggerDoc = jsonSlurper.parseText(new URL(backendServiceSwaggerEndpoint).getText())
-	println('updating Service...')
-	def name = swaggerDoc.info.title != null ? swaggerDoc.info.title : serviceSystemName
-	def api_version=swaggerDoc.info.version
-	name=name + "(" +envName+", v"+api_version+")"
-	def apiurl = "${adminBaseUrl}/admin/api/services/"+serviceid+".json"
-	def data = "access_token=${token}&name=${name}"
-	def responseBody=makeRequestwithBody(apiurl, data, 'PUT')
-
-	println('updating Proxy Setting...')
-	serviceurl = adminBaseUrl+"/admin/api/services/";
-	apiurl = serviceurl+serviceid+"/proxy.json";
-	data = "access_token=${token}&endpoint=${URLEncoder.encode(endpoint, 'UTF-8')}&api_backend=${URLEncoder.encode(api_backend, 'UTF-8')}&sandbox_endpoint=${URLEncoder.encode(sandbox_endpoint, 'UTF-8')}"
-	responseBody=makeRequestwithBody(apiurl, data, 'PATCH')
-
- 	serviceurl = adminBaseUrl+"/admin/api/services/";
-	apiurl = serviceurl+serviceid+"/proxy/configs/sandbox/latest.json";
-	responseBody=makeGetRequest(apiurl+"?access_token=${token}")
-	Map mapserviceresponse = jsonSlurper.parseText(responsbody)
-	def version = mapserviceresponse.proxy_config.version
-	println(' version is....'+version)
-
-	serviceurl = adminBaseUrl+"/admin/api/services/";
-	apiurl = serviceurl+serviceid+"/proxy/configs/production/latest.json";
-	responseBody=makeGetRequest(apiurl+"?access_token=${token}")
-	mapserviceresponse = jsonSlurper.parseText(responsbody)
-	//println(serviceresponse);
-	def production_version = mapserviceresponse.proxy_config.version
-	println(' production_version is....'+production_version)
-	if (production_version!=version){
-    		println('Promte to Production...')
-		serviceurl = adminBaseUrl+"/admin/api/services/";
-		apiurl = serviceurl+serviceid+"/proxy/configs/sandbox/"+version+"/promote.json";
-		data = "access_token=${token}&to=production"
-		responseBody=makeRequestwithBody(apiurl, data, 'POST')
-		serviceresponse = jsonSlurper.parseText(responsbody)
-	}
-
-	serviceurl =adminBaseUrl+"/admin/api/services/"+serviceid+"/metrics.json";
-	responseBody=makeGetRequest(serviceurl+"?access_token=${token}")
-	mapserviceresponse = jsonSlurper.parseText(responsbody)
-	def metricId
-	if(mapserviceresponse.metrics){
-		metricId= mapserviceresponse.metrics[0].metric.id
-	}
-
-	println("metricId = "+metricId);
-	serviceurl = adminBaseUrl+"/admin/api/services/";
-	apiurl = serviceurl+serviceid+"/metrics/"+metricId+"/methods.json";
-	responseBody=makeGetRequest(apiurl+"?access_token=${token}")
-	ArrayList serviceresponseList = jsonSlurper.parseText(responsbody).methods
-
-	println('updates methods under a metric....')
-	def paths = swaggerDoc.paths.keySet() as List
-	paths.each { path ->
-		def methods = swaggerDoc.paths[path].keySet() as List
-			methods.each {
-			friendly_name=swaggerDoc.paths[path][it].operationId
-				if(!serviceresponseList.find { it.method['system_name'] == friendly_name }){
-					println("adding new method "+friendly_name)
-					serviceurl = adminBaseUrl+"/admin/api/services/";
-					apiurl = serviceurl+serviceid+"/metrics/"+metricId+"/methods.json";
-					data = "access_token=${token}&friendly_name=${friendly_name}&unit=String"
-					responseBody=makeRequestwithBody(apiurl, data, 'POST')
-					serviceresponse = jsonSlurper.parseText(responsbody)
-				}
-			}
-		}
-
-	 update3scaleActiveDoc(adminBaseUrl,token,endpoint,backendServiceSwaggerEndpoint,serviceSystemName,jsonSlurper)
-
-
-}
-
-def update3scaleActiveDoc(
-		String adminBaseUrl,
-		String token,
-		String productionRoute,
-		String backendServiceSwaggerEndpoint,
-		String serviceSystemName,
-		JsonSlurperClassic jsonSlurper) {
-
-	def activeDocSpecListUrl = "${adminBaseUrl}/admin/api/active_docs.json?access_token=${token}"
-	def servicesEndpoint = "${adminBaseUrl}/admin/api/services.json?access_token=${token}"
-	// instantiate JSON parser
-	//def jsonSlurper = new JsonSlurper()
-	println('Fetching service swagger json...')
-	// fetch new swagger doc from service
-	def swaggerDoc = jsonSlurper.parseText(new URL(backendServiceSwaggerEndpoint).getText())
-	def services =  jsonSlurper.parseText(new URL(servicesEndpoint).getText()).services
-	def service = (services.find { it.service['system_name'] == serviceSystemName }).service
-	// get the auth config for this service, so we can add the correct auth params to the swagger doc
-	def proxyEndpoint = "${adminBaseUrl}/admin/api/services/${service.id}/proxy.json?access_token=${token}"
-	def proxyConfig =  jsonSlurper.parseText(new URL(proxyEndpoint).getText()).proxy
-	swaggerDoc.host =  new URL(productionRoute).getHost();
-	// is the credential in a header or query param?
-	def credentialsLocation = proxyConfig['credentials_location'] == 'headers' ? 'header' : 'query'
-	// for each method on each path, add the param for credentials
-	def paths = swaggerDoc.paths.keySet() as List
-	paths.each { path ->
-		def methods = swaggerDoc.paths[path].keySet() as List
-		methods.each {
-			if (!(swaggerDoc.paths[path][it].parameters)) {
-				swaggerDoc.paths[path][it].parameters = []
-			}
-			swaggerDoc.paths[path][it].parameters.push([
-				in: credentialsLocation,
-				name: proxyConfig['auth_user_key'],
-				description: 'User authorization key',
-				required: true,
-				type: 'string'
-			])
-		}
-	}
-	// get all existing docs on 3scale
-	println('Fetching uploaded Active Docs...')
-	def activeDocs =  jsonSlurper.parseText(new URL(activeDocSpecListUrl).getText())['api_docs']
-	// find the one matching the correct service (or not)
-	def activeDoc = activeDocs.find { it['api_doc']['system_name'] == serviceSystemName }
-	if ( activeDoc ) {
-		println('Found Active Doc for ' + serviceSystemName)
-		def activeDocId = activeDoc['api_doc'].id
-		// update our swagger doc, now containing the correct host and auth params to 3scale
-		def activeDocSpecUpdateUrl = "${adminBaseUrl}/admin/api/active_docs/${activeDocId}.json"
-		def name = swaggerDoc.info.title != null ? swaggerDoc.info.title : serviceSystemName
-		def data = "access_token=${token}&body=${URLEncoder.encode(JsonOutput.toJson(swaggerDoc), 'UTF-8')}&skip_swagger_validations=false"
-		makeRequestwithBody(activeDocSpecUpdateUrl, data, 'PUT')
-	} else {
-		println('Active Docs for ' + serviceSystemName + ' not found in 3scale. Creating a new Active Doc.')
-		// post our new swagger doc, now containing the correct host and auth params to 3scale
-		def activeDocSpecCreateUrl = "${adminBaseUrl}/admin/api/active_docs.json"
-		def name = swaggerDoc.info.title != null ? swaggerDoc.info.title : serviceSystemName
-		def data = "access_token=${token}&name=${name}&system_name=${serviceSystemName}&body=${URLEncoder.encode(JsonOutput.toJson(swaggerDoc), 'UTF-8')}&skip_swagger_validations=false"
-		makeRequestwithBody(activeDocSpecCreateUrl, data, 'POST')
-	}
-}
 
 def makeGetRequest(url) {
         println(url)
@@ -873,32 +624,6 @@ def makeGetRequest(url) {
 	 }
 }
 
-def  makeRequestwithBody(url, body, method) {
-
-	println(url)
-	println(body)
-	def post = new URL(url).openConnection();
-	post.setRequestMethod("POST")
-	post.setDoOutput(true)
-	post.setRequestProperty('Content-Type', 'application/x-www-form-urlencoded')
-	if(method!="POST"){
-		post.setRequestProperty("X-HTTP-Method-Override", method);
-	 }
-	post.getOutputStream().write(body.getBytes("UTF-8"));
-	def postRC = post.getResponseCode();
-	println( post.getResponseCode());
-	if (postRC != 200 && postRC != 201) {
-	   println('Failed to update/create . HTTP response: ' + postRC)
-		responsbody=post.getInputStream().getText()
-		println(post.getInputStream().getText());
-		assert false
-	} else {
-		println('created successfully!')
-		responsbody=post.getInputStream().getText()
-		return responsbody
-
-	}
-}
 
 
-///////////end of 3scale ////////////////////////////////////
+

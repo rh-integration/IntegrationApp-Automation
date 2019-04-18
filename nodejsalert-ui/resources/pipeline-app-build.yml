@@ -8,7 +8,7 @@ metadata:
   name: pipeline
 parameters:
 - name: GIT_REPO
-  value: https://github.com/RHsyseng/IntegrationApp-Automation.git
+  value: https://github.com/rh-integration/IntegrationApp-Automation.git
   required: true
 - name: GIT_BRANCH
   value: master 

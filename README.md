@@ -31,7 +31,7 @@ An integration application consisting of Multiple services working in combinatio
      • Source to Image (S2I) build and deploy apps on openshift environment.
      • Building a pipeline to support automated CI/CD
      • Expose a REST API using Camel, and export API doc to swagger.
-     • Publish API on 3scale environment using CI/CD pipeline.
+     • Publish API on 3scale environment using 3scaletoolbox jenkins pipeline.
      • Manage the API through 3scale API management and update the application plan to rate-limit the application.
      • Design a web application that makes its calls through the 3scale API gateway.
 
@@ -39,11 +39,13 @@ An integration application consisting of Multiple services working in combinatio
 
 This demo contains below applications.
 
-    • Gateway application https://github.com/RHsyseng/IntegrationApp-Automation/tree/master/maingateway-service 
-    • User Service application https://github.com/RHsyseng/IntegrationApp-Automation/tree/master/fisuser-service
-    • Alert Service Application https://github.com/RHsyseng/IntegrationApp-Automation/tree/master/fisalert-service
-    • Node.js Web application https://github.com/RHsyseng/IntegrationApp-Automation/tree/master/nodejsalert-ui
-    • 3scale (Openshift on-premises) environment
+   1. [Gateway application](https://github.com/rh-integration/IntegrationApp-Automation/tree/master/maingateway-service).
+   2. [User Service application ](https://github.com/rh-integration/IntegrationApp-Automation/tree/master/fisuser-service)
+   3. [Alert Service Application ](https://github.com/rh-integration/IntegrationApp-Automation/tree/master/fisalert-service)
+   4. [Node.js Web application](https://github.com/rh-integration/IntegrationApp-Automation/tree/master/nodejsalert-ui)
+   5. [3scale Toolbox Jenkins Pipeline](https://github.com/rh-integration/IntegrationApp-Automation/tree/master/cicd-3scale).
+     
+
 
 ## Automation of Applications in OpenShift
 ### Build and deploy with pipelines
@@ -54,7 +56,7 @@ The following instructions assuming that you are using OpenShift. But the same c
 Download the source codes from git repository by either forking, or simply cloning it. 
 
 ```
-git clone https://github.com/RHsyseng/IntegrationApp-Automation.git 
+git clone https://github.com/rh-integration/IntegrationApp-Automation.git 
 
 ```
 Assume you have OpenShift cluster ready and running.
@@ -65,7 +67,7 @@ oc login <OpenShift cluster url> --token=<OpenShift user login token>
 
 ```
 
-Setup `rh-dev`, `rh-test` and `rh-prod` OpenShift projects as the target environment (you may skip this step if you already have the environment ready, and this script will first delete the original projects in OpenShift and create the new ones).
+Setup `rh-dev`, `rh-test` and `rh-prod` OpenShift projects as the target environment (you may skip this step if you already have the environment ready, and you can also change projects name inside env.sh ).
     
 ```sh
 
@@ -78,7 +80,7 @@ You can also customize the pipelines by changing their parameters.  Different te
 
 ```
 Parameters           Default                            Explanations
-GIT_REPO             https://github.com/RHsyseng/IntegrationApp-Automation.git
+GIT_REPO             https://github.com/rh-integration/IntegrationApp-Automation.git
 GIT_BRANCH           master                             #git branch where you want to build
 OPENSHIFT_HOST       <leave it for now, will be used in future release>
 OPENSHIFT_TOKEN      <leave it for now, will be used in future release>
@@ -150,10 +152,10 @@ oc new-app -f nodejsalert-ui/resources/pipeline-app-build.yml -p IMAGE_REGISTRY=
 oc new-app -f fisalert-service/src/main/resources/pipeline-app-build.yml -p IMAGE_REGISTRY=docker-registry.default.svc:5000 -p IMAGE_NAMESPACE=rh-dev -p DEV_PROJECT=rh-dev -p TEST_PROJECT=rh-test -p PROD_PROJECT=rh-prod
 
 # import aggregated-pipeline
-oc new-app -f pipelinetemplates/pipeline-aggregated-build.yml -p IMAGE_REGISTRY=docker-registry.default.svc:5000 -p IMAGE_NAMESPACE=rh-dev -p DEV_PROJECT=rh-dev -p TEST_PROJECT=rh-test -p PROD_PROJECT=rh-prod -p API_BACK_END=<api_backend_url> -p END_POINT=<production_gateway_url> -p SANDBOX_END_POINT=<staging_gateway_url> -p THREESCALE_URL=<3scale_admin_url> -p API_TOKEN=<3scale_api_token>
+oc new-app -f pipelinetemplates/pipeline-aggregated-build.yml -p IMAGE_REGISTRY=docker-registry.default.svc:5000 -p IMAGE_NAMESPACE=rh-dev -p DEV_PROJECT=rh-dev -p TEST_PROJECT=rh-test -p PROD_PROJECT=rh-prod 
 
 # import 3scale pipeline
-oc new-app -f cicd-3scale/groovy-scripts/pipeline-template.yaml -p API_BACK_END=<api_backend_url> -p END_POINT=<production_gateway_url> -p SANDBOX_END_POINT=<staging_gateway_url> -p THREESCALE_URL=<3scale_admin_url> -p API_TOKEN=<3scale_api_token>
+oc new-app -f cicd-3scale/3scaletoolbox/pipeline-template.yaml  -p IMAGE_NAMESPACE=rh-dev -p DEV_PROJECT=rh-dev -p TEST_PROJECT=rh-test -p PROD_PROJECT=rh-prod 
 
 
 ```
@@ -172,21 +174,20 @@ You should see the application and it is started with web front-end like this:
 ![Application View](images/application_launch_view.png "Application View")
 
 
-### Jenkins plugin setup & In-process Script Approval & 3scale pipeline setup
+### In-process Script Approval & 3scale pipeline setup
 
-Before running `3scale API publishing Pipeline (publish-api-3scale)`, please read the following instructions.
+Before running `Pipelines `, please read the following instructions.
 
-1) If you have your 3Scale server which HTTPS is enabled with self-signed certificate. Please install "skip-certificate-check" plugin so that Jenkins will skip validating HTTPS certificate.  Jenkins pipeline will fail without this plugin.  However, if you have CA signed certificate, you don't need to install this plugin.
 
-   To install "skip-certificate-check", go to "Manage Jenkins", "Manage Plugins", In Filter box, search and then select "skip-certificate-check", then click on "Install without restart".  In the installing page, check the "Restart Jenkins when Installation is complete and no jobs are running" checkbox, and wait for the installation and restart to complete.  We suggest you to use persistent storage enabled Jenkins pod so that you only need to do this installation once.
+* In Jenkins 2, running script in pipeline are subject to script security check (this issue will be faced with smoke test step script), and the script has to be approved before it is allowed to run.  When you start to run ` Pipelines`, you mostly will encounter "Scripts not permitted to use method ... " exceptions. If this happens, please login Jenkins as an administrator, go to "Manage Jenkins", "In-process Script Approval" page to approval the script.  You may need to do the approval multiple times as we found that Jenkins does the check on method level.  You only need to approve once on all those methods during the first run.  We suggest you to use persistent storage enabled Jenkins pod so that your approvals can be saved and reloaded if pod is restarted.
 
-2) In Jenkins 2, running script in pipeline are subject to script security check (this pipeline was developed with Groovy script), and the script has to be approved before it is allowed to run.  When you start to run `3scale API publishing Pipeline`, you mostly will encounter "Scripts not permitted to use method ... " exceptions. If this happens, please login Jenkins as an administrator, go to "Manage Jenkins", "In-process Script Approval" page to approval the script.  You may need to do the approval multiple times as we found that Jenkins does the check on method level.  You only need to approve once on all those methods during the first run.  We suggest you to use persistent storage enabled Jenkins pod so that your approvals can be saved and reloaded if pod is restarted.
-
-3) Create the routes for your APIcast gateways in 3scale Project if required with below command
+* Create the routes for your APIcast gateways in 3scale Project if required with below command
 
 ```sh
 oc new-app -f apicast-routes-template.yaml -p BASE_NAME=3scalefuse -p WILDCARD_DOMAIN=<openshift_wildcard_domain> -n <3scale_namespace>
 ```
+
+* Read [3scaletoolbox Configuration](cicd-3scale/README.md)
 
 ### Deploy with BlueGreen Deployment Strategy
 
@@ -205,3 +206,10 @@ oc patch route/nodejsalert-ui -p  '{"spec":{"to":{"name":"nodejsalert-ui-green"}
 oc patch route/nodejsalert-ui -p  '{"spec":{"to":{"name":"nodejsalert-ui"}}}' -n rh-test
 
 ```
+###  Cleanup
+
+delete all projects run below command 
+```sh
+ ./setup/delete-setup.sh
+ 
+ ```

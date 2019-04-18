@@ -2,7 +2,6 @@
 
 . ./env.sh 
 
-oc delete project $DEV_PROJECT
 oc new-project $DEV_PROJECT 2> /dev/null
 while [ $? \> 0 ]; do
     sleep 1
@@ -19,8 +18,9 @@ echo "Start up MySQL for database access"
 oc new-app mysql-ephemeral --param=MYSQL_PASSWORD=password --param=MYSQL_USER=dbuser --param=MYSQL_DATABASE=sampledb
 
 echo "Start up Broker"
-oc import-image amq62-openshift --from=registry.access.redhat.com/jboss-amq-6/amq62-openshift --confirm
-oc new-app -f projecttemplates/amq62-openshift.json --param=MQ_USERNAME=admin --param=MQ_PASSWORD=admin --param=IMAGE_STREAM_NAMESPACE=$DEV_PROJECT
+oc import-image amq-broker-72-openshift:1.3 --from=registry.access.redhat.com/amq-broker-7/amq-broker-72-openshift:1.3-4 --confirm
+oc new-app -f projecttemplates/amq-broker-72-basic.yaml --param=AMQ_USER=admin --param=AMQ_PASSWORD=admin --param=IMAGE_STREAM_NAMESPACE=$DEV_PROJECT
+
 
 echo "import fisuser-service pipeline"
 oc new-app -f fisuser-service/src/main/resources/pipeline-app-build.yml -p IMAGE_NAMESPACE=$DEV_PROJECT -p DEV_PROJECT=$DEV_PROJECT -p TEST_PROJECT=$TEST_PROJECT -p PROD_PROJECT=$PROD_PROJECT 
@@ -38,9 +38,8 @@ echo "import integration-master-pipeline"
 oc new-app -f pipelinetemplates/pipeline-aggregated-build.yml -p IMAGE_NAMESPACE=$DEV_PROJECT -p DEV_PROJECT=$DEV_PROJECT -p TEST_PROJECT=$TEST_PROJECT -p PROD_PROJECT=$PROD_PROJECT
 
 echo "import 3scale API publishing pipeline"
-oc new-app -f cicd-3scale/groovy-scripts/pipeline-template.yaml -p IMAGE_NAMESPACE=$DEV_PROJECT -p DEV_PROJECT=$DEV_PROJECT -p TEST_PROJECT=$TEST_PROJECT -p PROD_PROJECT=$PROD_PROJECT
+oc new-app -f cicd-3scale/3scaletoolbox/pipeline-template.yaml -p IMAGE_NAMESPACE=$DEV_PROJECT -p DEV_PROJECT=$DEV_PROJECT -p TEST_PROJECT=$TEST_PROJECT -p PROD_PROJECT=$PROD_PROJECT
 
-oc delete project $TEST_PROJECT
 oc new-project $TEST_PROJECT 2> /dev/null
 while [ $? \> 0 ]; do
     sleep 1
@@ -56,8 +55,8 @@ echo "Start up MySQL for database access"
 oc new-app mysql-ephemeral --param=MYSQL_PASSWORD=password --param=MYSQL_USER=dbuser --param=MYSQL_DATABASE=sampledb
 
 echo "Start up Broker"
-oc import-image amq62-openshift --from=registry.access.redhat.com/jboss-amq-6/amq62-openshift --confirm
-oc new-app -f projecttemplates/amq62-openshift.json --param=MQ_USERNAME=admin --param=MQ_PASSWORD=admin --param=IMAGE_STREAM_NAMESPACE=$TEST_PROJECT
+oc import-image amq-broker-72-openshift:1.3 --from=registry.access.redhat.com/amq-broker-7/amq-broker-72-openshift:1.3-4 --confirm
+oc new-app -f projecttemplates/amq-broker-72-basic.yaml --param=AMQ_USER=admin --param=AMQ_PASSWORD=admin --param=IMAGE_STREAM_NAMESPACE=$TEST_PROJECT
 
 oc policy add-role-to-user edit system:serviceaccount:${DEV_PROJECT}:jenkins -n ${TEST_PROJECT}
 oc policy add-role-to-user edit system:serviceaccount:${DEV_PROJECT}:default -n ${TEST_PROJECT}
@@ -65,7 +64,7 @@ oc policy add-role-to-user system:image-puller system:serviceaccount:${TEST_PROJ
 oc policy add-role-to-user view --serviceaccount=default -n ${DEV_PROJECT}
 
 #this should be used in development/demo environment for testing purpose
-oc delete project $PROD_PROJECT
+
 oc new-project $PROD_PROJECT 2> /dev/null
 while [ $? \> 0 ]; do
     sleep 1
@@ -81,8 +80,9 @@ oc project $PROD_PROJECT
 oc new-app mysql-ephemeral --param=MYSQL_PASSWORD=password --param=MYSQL_USER=dbuser --param=MYSQL_DATABASE=sampledb
 
 echo "Start up Broker"
-oc import-image amq62-openshift --from=registry.access.redhat.com/jboss-amq-6/amq62-openshift --confirm
-oc new-app -f projecttemplates/amq62-openshift.json --param=MQ_USERNAME=admin --param=MQ_PASSWORD=admin --param=IMAGE_STREAM_NAMESPACE=$PROD_PROJECT
+oc import-image amq-broker-72-openshift:1.3 --from=registry.access.redhat.com/amq-broker-7/amq-broker-72-openshift:1.3-4 --confirm
+oc new-app -f projecttemplates/amq-broker-72-basic.yaml --param=AMQ_USER=admin --param=AMQ_PASSWORD=admin --param=IMAGE_STREAM_NAMESPACE=$PROD_PROJECT
+
 
 
 oc policy add-role-to-user edit system:serviceaccount:${DEV_PROJECT}:jenkins -n ${PROD_PROJECT}

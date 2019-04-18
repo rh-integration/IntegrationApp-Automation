@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+ xmlns:util="http://www.springframework.org/schema/util"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="        
+    http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd        
+    http://camel.apache.org/schema/spring       http://camel.apache.org/schema/spring/camel-spring.xsd
+
+    http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+<util:list id="UserProfileList" list-class="java.util.ArrayList">
+   <ref bean="UserProfile"/>
+</util:list>
+<util:map id="UserProfile" map-class="java.util.HashMap">
+   <entry key="firstName" value="Abdul"/>
+   <entry key="lastName" value="Hameed"/>
+   <entry key="email" value="xyz@gmail.com"/>
+   <entry key="phone" value="12345678"/>
+   <entry key="addr" value="28 st town state zipcode "/>
+   <entry key="state" value="MA"/>
+
+</util:map>
+</beans>
