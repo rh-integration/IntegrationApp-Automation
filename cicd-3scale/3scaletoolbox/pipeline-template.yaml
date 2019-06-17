@@ -1,0 +1,140 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+labels:
+  template: pipeline-publish-api-3scale
+metadata:
+  annotations:
+    description: 3scale API publishing Pipeline
+  name: publish-api-3scale
+objects:
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    labels:
+      name: publish-api-3scale
+    name: publish-api-3scale
+  spec:
+    output: null
+    postCommit: null
+    resources: null
+    runPolicy: Serial
+    source:
+      type: None
+    source:
+      git:
+        uri: ${GIT_REPO}
+        ref: ${GIT_BRANCH}
+    strategy:
+      type: JenkinsPipeline
+      jenkinsPipelineStrategy:
+        jenkinsfilePath: cicd-3scale/3scaletoolbox/Jenkinsfile
+        env:
+        - name: GIT_BRANCH
+          value: ${GIT_BRANCH}
+        - name: GIT_REPO
+          value: ${GIT_REPO}
+        - name: API_BACK_END
+          value: ${API_BACK_END}
+        - name: END_POINT
+          value: ${END_POINT}
+        - name: SANDBOX_END_POINT
+          value: ${SANDBOX_END_POINT}
+        - name: API_BASE_SYSTEM_NAME
+          value: ${API_BASE_SYSTEM_NAME}
+        - name: THREESCALE_URL
+          value: ${THREESCALE_URL}
+        - name: API_TOKEN
+          value: ${API_TOKEN}
+        - name: MAJOR_VERSION
+          value: ${MAJOR_VERSION}
+        - name: SWAGGER_FILE_NAME
+          value: ${SWAGGER_FILE_NAME}
+        - name: DEV_PROJECT
+          value: ${DEV_PROJECT}
+        - name: TEST_PROJECT
+          value: ${TEST_PROJECT}
+        - name: PROD_PROJECT
+          value: ${PROD_PROJECT}
+        - name: IMAGE_NAMESPACE
+          value: ${IMAGE_NAMESPACE}
+        - name: IMAGE_TAG
+          value: ${THREESCALE_TOOLBOX_IMAGE_TAG}
+        - name: TOOLBOX_IMAGE
+          value: ${THREESCALE_TOOLBOX_IMAGE}
+        - name: SECRET_NAME
+          value: ${SECRET_NAME}
+        - name: NAMESPACE
+          value: ${NAMESPACE}
+        - name: TARGET_INSTANCE
+          value: ${TARGET_INSTANCE}
+
+parameters:
+- name: GIT_REPO
+  value: https://github.com/rh-integration/IntegrationApp-Automation.git
+  required: true
+- name: GIT_BRANCH
+  value: master
+  required: true
+- name: API_BACK_END
+  value: http://maingateway-service-ah-dev.app.middleware.ocp.cloud.lab.eng.bos.redhat.com
+  required: true
+- name: END_POINT
+  value: http://3scalefuse.app.middleware.ocp.cloud.lab.eng.bos.redhat.com
+  required: true
+- name: SANDBOX_END_POINT
+  value: http://3scalefuse-staging.app.middleware.ocp.cloud.lab.eng.bos.redhat.com
+  required: true
+- name: SWAGGER_FILE_NAME
+  displayName: SWAGGER_FILE_NAME
+  required: true
+  value: https://raw.githubusercontent.com/RHsyseng/IntegrationApp-Automation/master/cicd-3scale/groovy-scripts/openapi-spec.json
+  description: SWAGGER_FILE_NAME for 3Scale env
+- name: API_BASE_SYSTEM_NAME
+  value: 3scalefuse
+  required: true
+- name: THREESCALE_URL
+  displayName: Admin URL of Threescale
+  required: true
+  value: ah-3scale-ansible-admin.app.middleware.ocp.cloud.lab.eng.bos.redhat.com
+  description:  The hostname of the 3scale admin portal (bare hostname, without https://)
+- name: API_TOKEN
+  displayName: Access token from 3scale
+  required: true
+  value: e03adec41c0ceab7267b68eba2112d72a9d073979530b35b8a970d91ca3bdd24
+  description: Access token from 3scale for calling management API
+- name: DEV_PROJECT
+  required: true
+- name: TEST_PROJECT
+  required: true
+- name: PROD_PROJECT
+  required: true
+- name: IMAGE_NAMESPACE
+  required: true
+- name: THREESCALE_TOOLBOX_IMAGE_TAG
+  description: The version of toolbox Image
+  value: v0.8.0
+- name: THREESCALE_TOOLBOX_IMAGE
+  description: tool box Image registry url
+  value: quay.io/redhat/3scale-toolbox
+- name: SECRET_NAME
+  value: 3scale-toolbox
+- name: TARGET_INSTANCE
+  value: instance_a
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

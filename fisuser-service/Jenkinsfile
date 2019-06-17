@@ -50,7 +50,7 @@ pipeline {
             steps {
                 script {
                     serviceName = 'fisuser-service'
-                    smokeTestOperation='cicd/user/profile/11111'
+                    smokeTestOperation='cicd/users/profile/11111'
                     makeGetRequest("http://${serviceName}/${smokeTestOperation}")
                 }
             }
@@ -80,7 +80,7 @@ pipeline {
             steps {
                 script {
                     serviceName = 'fisuser-service'
-                    smokeTestOperation='cicd/user/profile/11111'
+                    smokeTestOperation='cicd/users/profile/11111'
                     makeGetRequest("http://${serviceName}/${smokeTestOperation}")
                 }
             }
@@ -131,7 +131,7 @@ pipeline {
             steps {
                 script {
                     serviceName = 'fisuser-service'
-                    smokeTestOperation='cicd/user/profile/11111'
+                    smokeTestOperation='cicd/users/profile/11111'
                     makeGetRequest("http://${serviceName}/${smokeTestOperation}")
                 }
             }

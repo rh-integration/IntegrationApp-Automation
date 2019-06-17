@@ -25,7 +25,7 @@
         </restConfiguration>
         <rest id="rest-137a1c4f-a95b-4701-9550-5c4c829b6931" path="/">
             <post id="149fa303-f173-46b5-8c95-e83adb43008a"
-                type="org.redhat.alertservice.UserInfo" uri="alert">
+                type="org.redhat.alertservice.UserInfo" uri="alerts">
                 <to uri="direct:alert"/>
             </post>
         </rest>

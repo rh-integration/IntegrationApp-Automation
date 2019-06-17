@@ -8,7 +8,7 @@ metadata:
   name: pipeline
 parameters:
 - name: GIT_REPO
-  value: https://github.com/RHsyseng/IntegrationApp-Automation.git
+  value: https://github.com/rh-integration/IntegrationApp-Automation
   required: true
 - name: GIT_BRANCH
   value: master
@@ -42,9 +42,9 @@ parameters:
 - name: SWAGGER_FILE_NAME
   displayName: SWAGGER_FILE_NAME
   required: true
-  value: https://raw.githubusercontent.com/RHsyseng/IntegrationApp-Automation/master/cicd-3scale/groovy-scripts/openapi-spec.json
+  value: https://raw.githubusercontent.com/rh-integration/IntegrationApp-Automation/master/cicd-3scale/groovy-scripts/openapi-spec.json
   description: SWAGGER_FILE_NAME for 3Scale env
-- name: OPENSHIFT_SERVICE_NAME
+- name: API_BASE_SYSTEM_NAME
   value: 3scalefuse
   required: true
 - name: THREESCALE_URL
@@ -61,7 +61,16 @@ parameters:
   displayName: API CAST Gateway Project or 3scale project name deployed on Openshift to create the routes
   required: true
   value: ah-3scale-ansible
-
+- name: THREESCALE_TOOLBOX_IMAGE_TAG
+  description: The version of toolbox Image
+  value: v0.8.0
+- name: THREESCALE_TOOLBOX_IMAGE
+  description: tool box Image registry url
+  value: quay.io/redhat/3scale-toolbox
+- name: SECRET_NAME
+  value: 3scale-toolbox
+- name: TARGET_INSTANCE
+  value: instance_a
 
 objects:
 - apiVersion: v1
@@ -110,8 +119,8 @@ objects:
           value: ${END_POINT}
         - name: SANDBOX_END_POINT
           value: ${SANDBOX_END_POINT}
-        - name: OPENSHIFT_SERVICE_NAME
-          value: ${OPENSHIFT_SERVICE_NAME}
+        - name: API_BASE_SYSTEM_NAME
+          value: ${API_BASE_SYSTEM_NAME}
         - name: THREESCALE_URL
           value: ${THREESCALE_URL}
         - name: API_TOKEN
@@ -122,4 +131,15 @@ objects:
           value: ${SWAGGER_FILE_NAME}
         - name: THREESCALE_OPENSHIFT_PROJECT
           value: ${THREESCALE_OPENSHIFT_PROJECT}
+        - name: IMAGE_TAG
+          value: ${THREESCALE_TOOLBOX_IMAGE_TAG}
+        - name: TOOLBOX_IMAGE
+          value: ${THREESCALE_TOOLBOX_IMAGE}
+        - name: SECRET_NAME
+          value: ${SECRET_NAME}
+        - name: NAMESPACE
+          value: ${NAMESPACE}
+        - name: TARGET_INSTANCE
+          value: ${TARGET_INSTANCE}
+
        
