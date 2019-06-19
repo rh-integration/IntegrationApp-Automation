@@ -1,30 +1,29 @@
-swagger: '2.0'
+---
+swagger: "2.0"
 info:
     title: useralert-Fuseservice
     description: Fuse Integration Service - main gateway Service
     version: 1.0.0
 paths:
-    '/maingateway/profile/{id}':
+    /maingateway/profile/{id}:
         get:
             summary: alert user by by providing id and alert type
             description: Send the alert to user by providing user id and alert type
             operationId: alertUser
             responses:
-                '200':
+                200:
                     description: Sucess
         parameters:
-            -
-                name: id
-                in: path
-                description: user id number
-                required: true
-                type: string
-            -
-                name: alertType
-                in: header
-                description: The Type of alert
-                required: true
-                type: string
+            - name: id
+              in: path
+              description: user id number
+              required: true
+              type: string
+            - name: alertType
+              in: header
+              description: The Type of alert
+              required: true
+              type: string
 securityDefinitions:
     apikey:
         type: apiKey
@@ -32,7 +31,8 @@ securityDefinitions:
         name: api-key
         in: query
 security:
-    -
-        apikey: []
+    - apikey: []
+host: maingateway-service-rh-test.app.middleware.ocp.cloud.lab.eng.bos.redhat.com
 basePath: /cicd
-        
+schemes:
+    - http

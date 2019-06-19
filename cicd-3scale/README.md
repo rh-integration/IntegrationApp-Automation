@@ -25,11 +25,15 @@ Go to [studio.apicur.io](https://studio.apicur.io/), login and import the openap
     } ]
 
 ```
-* add base path 
+* add base path, API PRIVATE_BASE_URL in host field and set scheme type as seen below
 
 ```json
 
-   "basePath": "/cicd",
+    "host": "maingateway-service-rh-test.app.middleware.ocp.cloud.lab.eng.bos.redhat.com",
+     "basePath": "/cicd",
+     "schemes": [
+       "http"
+     ]
 
 ```
 
@@ -56,13 +60,13 @@ Go to [studio.apicur.io](https://studio.apicur.io/), login and import the openap
 	oc create secret generic 3scale-toolbox --from-file=$HOME/.3scalerc.yaml
 	```
 
-4. view [3scaletoolbox Jenkins File](https://raw.githubusercontent.com/rh-integration/IntegrationApp-Automation/toolbox-change/cicd-3scale/3scaletoolbox/Jenkinsfile)
+4. view [3scaletoolbox Jenkins File](https://raw.githubusercontent.com/rh-integration/IntegrationApp-Automation/master/cicd-3scale/3scaletoolbox/Jenkinsfile)
 
 5. Create pipeline, update the pipeline parameters as per your environment .
 
 ```sh
 
-oc new-app -f cicd-3scale/3scaletoolbox/pipeline-template.yaml  -p IMAGE_NAMESPACE=rh-dev -p DEV_PROJECT=rh-dev -p TEST_PROJECT=rh-test -p PROD_PROJECT=rh-prod 
+oc new-app -f cicd-3scale/3scaletoolbox/pipeline-template.yaml  -p IMAGE_NAMESPACE=rh-dev -p DEV_PROJECT=rh-dev -p TEST_PROJECT=rh-test -p PROD_PROJECT=rh-prod  -p PRIVATE_BASE_URL=http://maingateway-service-rh-test.app.middleware.ocp.cloud.lab.eng.bos.redhat.com -p PUBLIC_PRODUCTION_WILDCARD_DOMAIN=app.middleware.ocp.cloud.lab.eng.bos.redhat.com -p PUBLIC_STAGING_WILDCARD_DOMAIN=staging.app.middleware.ocp.cloud.lab.eng.bos.redhat.com -p DEVELOPER_ACCOUNT_ID=developer 
 
 ```
 

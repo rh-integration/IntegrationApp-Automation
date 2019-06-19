@@ -1,0 +1,53 @@
+---
+plan:
+  name: plan1
+  setup_fee: 0.0
+  cost_per_month: 0.0
+  trial_period_days: 0
+  cancellation_period: 0
+  system_name: plan1
+  end_user_required: false
+limits: 
+- period: eternity
+  value: 0
+  metric_system_name: alertuser
+- period: month
+  value: 1
+  metric_system_name: alertuser
+- period: week
+  value: 3
+  metric_system_name: alertuser
+- period: day
+  value: 42
+  metric_system_name: hits
+pricingrules:
+- cost_per_unit: '0.5'
+  min: 1
+  max: 1000
+  metric_system_name: alertuser
+- cost_per_unit: '0.3'
+  min: 1001
+  max: 10000
+  metric_system_name: alertuser
+- cost_per_unit: '0.2'
+  min: 10001
+  max: 1000000
+  metric_system_name: hits
+plan_features:
+- name: Unlimited Greetings
+  system_name: unlimited_greetings
+  scope: application_plan
+  visible: true
+metrics:
+- name: hits
+  system_name: hits
+  friendly_name: Hits
+  description: Number of API hits
+  unit: hit
+methods:
+- name: alertuser
+  system_name: alertuser
+  friendly_name: alertUser
+  description: ''
+created_at: '2019-06-20T15:07:21Z'
+toolbox_version: 0.10.0

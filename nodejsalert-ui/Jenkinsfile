@@ -8,7 +8,7 @@ pipeline {
         string (defaultValue: 'rh-dev', name:'DEV_PROJECT', description:'build or development project')
         string (defaultValue: 'rh-test', name:'TEST_PROJECT', description:'Test project')
         string (defaultValue: 'rh-prod', name:'PROD_PROJECT', description:'Production project')
-        string (defaultValue: 'https://github.com/RHsyseng/IntegrationApp-Automation.git', name:'GIT_REPO', description:'Git source')
+        string (defaultValue: 'https://github.com/rh-integration/IntegrationApp-Automation.git', name:'GIT_REPO', description:'Git source')
         string (defaultValue: 'master', name:'GIT_BRANCH', description:'Git branch in the source git')
         string (defaultValue: 'rel1.1', name:'SERVICE_VERSION', description:'Service version to be built')
         booleanParam (defaultValue: false, name:'BLUEGREEN_DEPLOYMENT', description:'Deploy Green version to Test/Production (default: normal deployment)')
@@ -99,6 +99,9 @@ pipeline {
             }
             steps {
                 script {
+                    echo "Waiting for deployment to complete prior starting smoke testing"
+                    sleep 60
+
                     serviceName = 'nodejsalert-ui'
                     makeGetRequest("http://${serviceName}:8080")
                 }
@@ -255,20 +258,8 @@ def promoteService (imageNamespace, projName, dcName) {
 
 def makeGetRequest(url) {
 
-	println('service...'+url);
+       sh"""set -e +x
+          curl -k -f -w "SmokeTest: %{http_code}\n" -o /dev/null -s ${url}
+        """
 
-	def get = new URL(url).openConnection();
-	get.setDoOutput(true)
-
-	get.setRequestProperty('Accept', 'application/json')
-
-	def responseCode = get.getResponseCode();
-	if (responseCode != 200 && responseCode != 201) {
-		println('Failed. HTTP response: ' + responseCode)
-		println(get.getInputStream().getText());
-		assert false
-	} else {
-		println('Teste successfully!')
-
-	}
 }

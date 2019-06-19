@@ -12,7 +12,7 @@ pipeline {
         string (defaultValue: 'rh-dev', name:'DEV_PROJECT', description:'build or development project')
         string (defaultValue: 'rh-test', name:'TEST_PROJECT', description:'Test project')
         string (defaultValue: 'rh-prod', name:'PROD_PROJECT', description:'Production project')
-        string (defaultValue: 'https://github.com/RHsyseng/IntegrationApp-Automation.git', name:'GIT_REPO', description:'Git source')
+        string (defaultValue: 'https://github.com/rh-integration/IntegrationApp-Automation.git', name:'GIT_REPO', description:'Git source')
         string (defaultValue: 'master', name:'GIT_BRANCH', description:'Git branch in the source git')
         string (defaultValue: 'dbuser', name:'MYSQL_USER', description:'My Sql user name')
         string (defaultValue: 'password', name:'MYSQL_PWD', description:'My Sql user password')
@@ -49,6 +49,10 @@ pipeline {
             }
             steps {
                 script {
+
+                    echo "Waiting for deployment to complete prior starting smoke testing"
+                    sleep 60
+
                     serviceName = 'fisuser-service'
                     smokeTestOperation='cicd/users/profile/11111'
                     makeGetRequest("http://${serviceName}/${smokeTestOperation}")
@@ -202,21 +206,8 @@ def deploy(folderName, projName, openShiftHost, openShiftToken, mysqlUser, mysql
 }
 
 def makeGetRequest(url) {
+    sh"""set -e +x
+                          curl -k -f -w "SmokeTest: %{http_code}\n" -o /dev/null -s ${url}
+    """
 
-	println('service...'+url);
-
-	def get = new URL(url).openConnection();
-	get.setDoOutput(true)
-
-	get.setRequestProperty('Accept', 'application/json')
-
-	def responseCode = get.getResponseCode();
-	if (responseCode != 200 && responseCode != 201) {
-		println('Failed. HTTP response: ' + responseCode)
-		println(get.getInputStream().getText());
-		assert false
-	} else {
-		println('Teste successfully!')
-
-	}
 }

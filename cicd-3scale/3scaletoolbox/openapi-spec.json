@@ -46,8 +46,12 @@
   "security" : [ {
     "apikey" : [ ]
   } ],
-  
-  "basePath": "/cicd"
+
+  "host": "maingateway-service-rh-test.app.middleware.ocp.cloud.lab.eng.bos.redhat.com",
+  "basePath": "/cicd",
+  "schemes": [
+    "http"
+  ]
 
 }
 
