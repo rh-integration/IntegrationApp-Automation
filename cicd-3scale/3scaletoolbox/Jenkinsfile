@@ -1,70 +1,200 @@
 #!groovy
-
-library identifier: '3scale-toolbox-jenkins@master', 
+library identifier: '3scale-toolbox-jenkins@master',
         retriever: modernSCM([$class: 'GitSCMSource',
-                              remote: 'https://github.com/rh-integration/3scale-toolbox-jenkins.git'])
+                              remote: 'https://github.com/rh-integration/3scale-toolbox-jenkins.git',
+                              traits: [[$class: 'jenkins.plugins.git.traits.BranchDiscoveryTrait']]])
 
 def service = null
 
-node() {
-  stage('Checkout Source') {
-    checkout scm
-  }
+pipeline {
+    agent {
+        node {
+            label 'master'
+        }
+    }
+    parameters{
+        string (defaultValue: 'notinuse', name:'OPENSHIFT_HOST', description:'open shift cluster url')
+        string (defaultValue: 'notinuse', name:'OPENSHIFT_TOKEN', description:'open shift token')
+        string (defaultValue: 'docker-registry.default.svc:5000', name:'IMAGE_REGISTRY', description:'open shift token')
+        string (defaultValue: 'rh-dev', name:'IMAGE_NAMESPACE', description:'name space where image deployed')
+        string (defaultValue: 'rh-dev', name:'DEV_PROJECT', description:'build or development project')
+        string (defaultValue: 'rh-test', name:'TEST_PROJECT', description:'Test project')
+        string (defaultValue: 'rh-prod', name:'PROD_PROJECT', description:'Production project')
+        string (defaultValue: 'https://github.com/rh-integration/IntegrationApp-Automation.git', name:'GIT_REPO', description:'Git source')
+        string (defaultValue: 'master', name:'GIT_BRANCH', description:'Git branch in the source git')
+        booleanParam (defaultValue: false, name:'SELECT_DEPLOY_TO_PROD', description:'Approval to deploy to Production (default: no deployment to production)')
+    }
+    stages {
 
-  stage("Prepare") {
+        stage('Checkout Source') {
+            steps {
+                checkout scm
+            }
+        }
+        stage('3scale Publish API to Test') {
+            when {
+                expression {
+                    params.SELECT_DEPLOY_TO_PROD == false
+                }
+            }
+            steps {
+                script {
 
-	def envName = params.TEST_PROJECT
-	def backendServiceSwaggerEndpoint=params.SWAGGER_FILE_NAME
-	def endpoint= params.END_POINT
-	def sandbox_endpoint= params.SANDBOX_END_POINT
-	def serviceSystemName=params.API_BASE_SYSTEM_NAME
+                    def envName = params.TEST_PROJECT
+                    def app_name= 'maingateway-service'
+                    def backend_service = sh(script: "oc get route ${app_name} -o jsonpath=\'{.spec.host}\' -n ${envName}", returnStdout: true)
+                    def targetPort = sh(script: "oc get route ${app_name} -o jsonpath=\'{.spec.port.targetPort}\' -n ${envName}", returnStdout: true)
+                    backend_service=  "http://"+backend_service
+                    println "${backend_service} "
 
-    service = toolbox.prepareThreescaleService(
-        openapi: [filename: "cicd-3scale/3scaletoolbox/openapi-spec.json"],
-        environment: [baseSystemName: params.API_BASE_SYSTEM_NAME],
-        toolbox: [openshiftProject: params.DEV_PROJECT, destination: params.TARGET_INSTANCE, secretName: params.SECRET_NAME, insecure: true],
-        service: [:],
-        applicationPlans: [
-          [ systemName: "test", name: "plan1", defaultPlan: true, published: true, costPerMonth:100, setupFee:10, trialPeriodDays:5],
-          [ systemName: "silver", name: "Silver", costPerMonth:100, setupFee:10, trialPeriodDays:5],
-          [ systemName: "gold", name: "Gold", costPerMonth:100, setupFee:10, trialPeriodDays:5 ],
-        ]
-    )
+                    echo "Prepare 3scale Configuration"
+                    service = toolbox.prepareThreescaleService(
+                            openapi: [filename: "cicd-3scale/3scaletoolbox/openapi-spec.json"],
+                            environment: [baseSystemName                : params.API_BASE_SYSTEM_NAME,
+                                          privateBaseUrl                : backend_service,
+                                          privateBasePath               : "/cicd",
+                                          environmentName               :  envName,
+                                          publicStagingWildcardDomain: params.PUBLIC_STAGING_WILDCARD_DOMAIN != "" ? params.PUBLIC_STAGING_WILDCARD_DOMAIN : null,
+                                          publicProductionWildcardDomain: params.PUBLIC_PRODUCTION_WILDCARD_DOMAIN != "" ? params.PUBLIC_PRODUCTION_WILDCARD_DOMAIN : null
+                                        ],
+                            toolbox: [openshiftProject: params.DEV_PROJECT, destination: params.TARGET_INSTANCE,
+                                      image           : "quay.io/redhat/3scale-toolbox:master", // TODO: remove me once the final image is released
+                                      insecure        : params.DISABLE_TLS_VALIDATION == "yes",
+                                      secretName      : params.SECRET_NAME],
+                            service: [:],
+                            applicationPlans: [
+                                    [systemName: "plan1", name: "plan1", defaultPlan: true, costPerMonth: 100, setupFee: 10, trialPeriodDays: 5],
+                                    [systemName: "silver", name: "Silver", costPerMonth: 100, setupFee: 10, trialPeriodDays: 5],
+                                    [artefactFile: params.PLAN_YAML_FILE_PATH],
+                            ],
+                            applications: [
+                                    [name: "my-test-app", description: "This is used for tests", plan: "plan1", account: params.DEVELOPER_ACCOUNT_ID]
 
-    echo "toolbox version = " + service.toolbox.getToolboxVersion()
-  }
+                            ]
+                    )
 
-  stage("Import OpenAPI") {
-    service.importOpenAPI()
-    echo "Service with system_name ${service.environment.targetSystemName} created !"
-  }
+                    echo "toolbox version = " + service.toolbox.getToolboxVersion()
 
-  stage("Create an Application Plan") {
-    service.applyApplicationPlans()
-  }
+                    echo "Import OpenAPI"
+                    service.importOpenAPI()
+                    echo "Service with system_name ${service.environment.targetSystemName} created !"
 
-  stage("Create an Application") {
-    def testApplication = [
-      name: "my-test-app",
-      description: "This is used for tests"
-    ]
+                    echo "Create an Application Plan"
+                    service.applyApplicationPlans()
 
-    def testApplicationCredentials = toolbox.getDefaultApplicationCredentials(service, testApplication.name)
-    service.applyApplication(testApplication + testApplicationCredentials)
-  }
+                    echo "Create an Application"
+                    service.applyApplication()
 
-  stage("Run integration tests") {
-    // To run the integration tests when using APIcast SaaS instances, we need
-    // to fetch the proxy definition to extract the staging public url
-    def proxy = service.readProxy()
-    sh '''set -xe
-    curl ${proxy.sandbox_endpoint}/beers
-    # TODO
-    '''
-  }
+                    echo "Run integration tests"
 
-  stage("Promote to production") {
-    service.promoteToProduction()
-  }
+                    def proxy = service.readProxy("sandbox")
+                    def sandbox_endpoint = proxy.sandbox_endpoint
 
+                    sh """set -e +x
+                          curl -k -f -w "UserAlert: %{http_code}\n" -o /dev/null -s ${
+                        sandbox_endpoint
+                    }/cicd/maingateway/profile/11111?alertType=ACCIDENT"&api-key=${service.applications[0].userkey}"
+                        """
+
+                    echo "Promote to production"
+                    service.promoteToProduction()
+
+
+                }
+            }
+        }
+
+        stage('Wait for user to select module to push to production.') {
+            when {
+                expression {
+                    params.SELECT_DEPLOY_TO_PROD == true
+                }
+            }
+            steps {
+                script {
+                    try {
+                        timeout (time:2, unit:'HOURS') {
+                            env.userProdApproval = input(id: 'userInput', message: "Do you approve this build to promote to production?")
+                            env.userProdApproval = 'Approved'
+                        }
+                    } catch (exception) {
+                        env.userProdApproval='---'
+                    }
+                    println("User approval to production " + env.userProdApproval);
+                }
+            }
+        }
+
+
+        stage('3scale Publish API to Production') {
+            when {
+                expression {
+                    env.userProdApproval == 'Approved'
+                }
+            }
+            steps {
+                script {
+
+                    def envName = params.PROD_PROJECT
+                    def app_name= 'maingateway-service'
+                    def backend_service = sh(script: "oc get route ${app_name} -o jsonpath=\'{.spec.host}\' -n ${envName}", returnStdout: true)
+                    def targetPort = sh(script: "oc get route ${app_name} -o jsonpath=\'{.spec.port.targetPort}\' -n ${envName}", returnStdout: true)
+                    backend_service=  "http://"+backend_service
+                    println "${backend_service} "
+
+                    echo "Prepare 3scale Configuration"
+                    service = toolbox.prepareThreescaleService(
+                            openapi: [filename: "cicd-3scale/3scaletoolbox/openapi-spec.json"],
+                            environment: [baseSystemName                : params.API_BASE_SYSTEM_NAME,
+                                          privateBaseUrl                : backend_service,
+                                          privateBasePath               : "/cicd",
+                                          environmentName               : envName,
+                                          publicStagingWildcardDomain: params.PUBLIC_STAGING_WILDCARD_DOMAIN != "" ? params.PUBLIC_STAGING_WILDCARD_DOMAIN : null,
+                                          publicProductionWildcardDomain: params.PUBLIC_PRODUCTION_WILDCARD_DOMAIN != "" ? params.PUBLIC_PRODUCTION_WILDCARD_DOMAIN : null
+                                        ],
+                            toolbox: [openshiftProject: params.DEV_PROJECT, destination: params.TARGET_INSTANCE,
+                                      image           : "quay.io/redhat/3scale-toolbox:master", // TODO: remove me once the final image is released
+                                      insecure        : params.DISABLE_TLS_VALIDATION == "yes",
+                                      secretName      : params.SECRET_NAME],
+                            service: [:],
+                            applicationPlans: [
+                                    [systemName: "plan1", name: "plan1", defaultPlan: true, costPerMonth: 100, setupFee: 10, trialPeriodDays: 5],
+                                    [systemName: "silver", name: "Silver", costPerMonth: 100, setupFee: 10, trialPeriodDays: 5],
+                                    [artefactFile: params.PLAN_YAML_FILE_PATH],
+                            ],
+                            applications: [
+                                    [name: "my-test-app", description: "This is used for tests", plan: "plan1", account: params.DEVELOPER_ACCOUNT_ID]
+
+                            ]
+                    )
+
+                    echo "toolbox version = " + service.toolbox.getToolboxVersion()
+
+                    echo "Import OpenAPI"
+                    service.importOpenAPI()
+                    echo "Service with system_name ${service.environment.targetSystemName} created !"
+
+                    echo "Create an Application Plan"
+                    service.applyApplicationPlans()
+
+                    echo "Create an Application"
+                    service.applyApplication()
+
+                    echo "Run integration tests"
+
+                    def proxy = service.readProxy("sandbox")
+                    def sandbox_endpoint = proxy.sandbox_endpoint
+
+                    sh """set -e +x
+                          curl -k -f -w "UserAlert: %{http_code}\n" -o /dev/null -s ${ sandbox_endpoint}/cicd/maingateway/profile/11111?alertType=ACCIDENT"&api-key=${service.applications[0].userkey}"
+                        """
+
+                    echo "Promote to production"
+                    service.promoteToProduction()
+
+
+                }
+            }
+        }
+    }
 }

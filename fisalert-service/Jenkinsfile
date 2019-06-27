@@ -12,7 +12,7 @@ pipeline {
         string (defaultValue: 'rh-dev', name:'DEV_PROJECT', description:'build or development project')
         string (defaultValue: 'rh-test', name:'TEST_PROJECT', description:'Test project')
         string (defaultValue: 'rh-prod', name:'PROD_PROJECT', description:'Production project')
-        string (defaultValue: 'https://github.com/RHsyseng/IntegrationApp-Automation.git', name:'GIT_REPO', description:'Git source')
+        string (defaultValue: 'https://github.com/rh-integration/IntegrationApp-Automation.git', name:'GIT_REPO', description:'Git source')
         string (defaultValue: 'master', name:'GIT_BRANCH', description:'Git branch in the source git')
         booleanParam (defaultValue: false, name:'SELECT_DEPLOY_TO_PROD', description:'Approval to deploy to Production (default: no deployment to production)')
     }
@@ -48,6 +48,10 @@ pipeline {
             }
             steps {
                 script {
+
+                    echo "Waiting for deployment to complete prior starting smoke testing"
+                    sleep 60
+
                     serviceName = 'fisalert-service'
                     smokeTestOperation='cicd/alerts'
                     body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
@@ -205,23 +209,12 @@ def deploy(folderName, projName, openShiftHost, openShiftToken) {
 
 def makePostRequest(url, body, method) {
 
-	println('service url...'+url);
-	println('post body...'+body)
+	sh"""set -e +x
 
-	def post = new URL(url).openConnection();
-	post.setRequestMethod(method)
-	post.setDoOutput(true)
-	post.setRequestProperty('Content-Type', 'application/json')
-	post.setRequestProperty('Accept', 'application/json')
-	post.getOutputStream().write(body.getBytes('UTF-8'))
-	def responseCode = post.getResponseCode();
-	if (responseCode != 200 && responseCode != 201) {
-		println('Failed. HTTP response: ' + responseCode)
-		println(post.getInputStream().getText());
-		assert false
-	} else {
-		println('Tested successfully!')
-		println(post.getInputStream().getText());
+        curl -X POST   ${url} \
+        -H 'cache-control: no-cache' \
+        -H 'content-type: application/json' \
+        -d '${body}'
 
-	}
+         """
 }
