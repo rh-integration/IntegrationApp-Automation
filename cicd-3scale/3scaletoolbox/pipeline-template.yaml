@@ -63,6 +63,8 @@ objects:
           value: ${DISABLE_TLS_VALIDATION}
         - name: PLAN_YAML_FILE_PATH
           value: ${PLAN_YAML_FILE_PATH}
+        - name: TOOLBOX_IMAGE_REGISTRY
+          value: ${TOOLBOX_IMAGE_REGISTRY}
 
           
 
@@ -109,6 +111,11 @@ parameters:
   value: "yes"
 - name: PLAN_YAML_FILE_PATH
   value: https://raw.githubusercontent.com/rh-integration/IntegrationApp-Automation/master/cicd-3scale/3scaletoolbox/plan.yaml
+- name: TOOLBOX_IMAGE_REGISTRY
+  value: docker-registry.default.svc:5000/rh-dev/toolbox:v0.11.0
+
+
+
 
 
 

@@ -306,7 +306,7 @@ pipeline {
                                           publicProductionWildcardDomain: params.PUBLIC_PRODUCTION_WILDCARD_DOMAIN != "" ? params.PUBLIC_PRODUCTION_WILDCARD_DOMAIN : null
                             ],
                             toolbox: [openshiftProject: params.DEV_PROJECT, destination: params.TARGET_INSTANCE,
-                                      image           : "quay.io/redhat/3scale-toolbox:master", // TODO: remove me once the final image is released
+                                      image           : params.TOOLBOX_IMAGE_REGISTRY,
                                       insecure        : params.DISABLE_TLS_VALIDATION == "yes",
                                       secretName      : params.SECRET_NAME],
                             service: [:],
@@ -316,7 +316,7 @@ pipeline {
                                     [artefactFile: params.PLAN_YAML_FILE_PATH],
                             ],
                             applications: [
-                                    [name: "my-test-app", description: "This is used for tests", plan: "plan1", account: params.DEVELOPER_ACCOUNT_ID]
+                                    [name: "my-test-app", description: "This is used for test environment", plan: "plan1", account: params.DEVELOPER_ACCOUNT_ID]
 
                             ]
                     )
@@ -500,7 +500,7 @@ pipeline {
                                           publicProductionWildcardDomain: params.PUBLIC_PRODUCTION_WILDCARD_DOMAIN != "" ? params.PUBLIC_PRODUCTION_WILDCARD_DOMAIN : null
                             ],
                             toolbox: [openshiftProject: params.DEV_PROJECT, destination: params.TARGET_INSTANCE,
-                                      image           : "quay.io/redhat/3scale-toolbox:master", // TODO: remove me once the final image is released
+                                      image           : params.TOOLBOX_IMAGE_REGISTRY,
                                       insecure        : params.DISABLE_TLS_VALIDATION == "yes",
                                       secretName      : params.SECRET_NAME],
                             service: [:],
@@ -510,7 +510,7 @@ pipeline {
                                     [artefactFile: params.PLAN_YAML_FILE_PATH],
                             ],
                             applications: [
-                                    [name: "my-test-app", description: "This is used for tests", plan: "plan1", account: params.DEVELOPER_ACCOUNT_ID]
+                                    [name: envName, description: "This is used for production", plan: "plan1", account: params.DEVELOPER_ACCOUNT_ID]
 
                             ]
                     )
