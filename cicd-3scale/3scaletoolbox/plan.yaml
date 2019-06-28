@@ -1,24 +1,24 @@
 ---
 plan:
   name: plan1
-  setup_fee: 0.0
-  cost_per_month: 0.0
-  trial_period_days: 0
-  cancellation_period: 0
+  setup_fee: 5.0
+  cost_per_month: 10.0
+  trial_period_days: 5
+  cancellation_period: 30
   system_name: plan1
   end_user_required: false
 limits: 
 - period: eternity
-  value: 0
+  value: 10000
   metric_system_name: alertuser
 - period: month
-  value: 1
+  value: 10000
   metric_system_name: alertuser
 - period: week
-  value: 3
+  value: 1000
   metric_system_name: alertuser
 - period: day
-  value: 42
+  value: 100
   metric_system_name: hits
 pricingrules:
 - cost_per_unit: '0.5'

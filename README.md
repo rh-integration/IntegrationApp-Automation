@@ -186,7 +186,6 @@ Before running Pipelines, listed 3scale configurtation required to set.
 * set below listed parameters
 
 ```sh
-PRIVATE_BASE_URL                                                          
 PUBLIC_PRODUCTION_WILDCARD_DOMAIN                                         
 PUBLIC_STAGING_WILDCARD_DOMAIN                                            
 API_BASE_SYSTEM_NAME                                                      
