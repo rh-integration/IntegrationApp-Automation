@@ -1,5 +1,5 @@
 #!groovy
-library identifier: '3scale-toolbox-jenkins@2.6-ER1',
+library identifier: '3scale-toolbox-jenkins@3scale-2.6.0-ER1',
         retriever: modernSCM([$class: 'GitSCMSource',
                               remote: 'https://github.com/rh-integration/3scale-toolbox-jenkins.git',
                               traits: [[$class: 'jenkins.plugins.git.traits.BranchDiscoveryTrait']]])
