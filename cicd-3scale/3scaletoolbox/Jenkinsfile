@@ -90,12 +90,14 @@ pipeline {
                     def proxy = service.readProxy("sandbox")
                     def sandbox_endpoint = proxy.sandbox_endpoint
 
-                    sh """set -e +x
-                          curl -k -f -w "UserAlert: %{http_code}\n" -o /dev/null -s ${
-                        sandbox_endpoint
-                    }/cicd/maingateway/profile/11111?alertType=ACCIDENT"&api-key=${service.applications[0].userkey}"
-                        """
+                    retry(5) {
 
+                        sh """set -e +x
+                          curl -k -f -w "UserAlert: %{http_code}\n" -o /dev/null -s ${
+                            sandbox_endpoint
+                        }/cicd/maingateway/profile/11111?alertType=ACCIDENT"&api-key=${service.applications[0].userkey}"
+                        """
+                    }
                     echo "Promote to production"
                     service.promoteToProduction()
 
@@ -184,11 +186,13 @@ pipeline {
 
                     def proxy = service.readProxy("sandbox")
                     def sandbox_endpoint = proxy.sandbox_endpoint
-
-                    sh """set -e +x
-                          curl -k -f -w "UserAlert: %{http_code}\n" -o /dev/null -s ${ sandbox_endpoint}/cicd/maingateway/profile/11111?alertType=ACCIDENT"&api-key=${service.applications[0].userkey}"
+                    retry(5) {
+                        sh """set -e +x
+                          curl -k -f -w "UserAlert: %{http_code}\n" -o /dev/null -s ${
+                            sandbox_endpoint
+                        }/cicd/maingateway/profile/11111?alertType=ACCIDENT"&api-key=${service.applications[0].userkey}"
                         """
-
+                    }
                     echo "Promote to production"
                     service.promoteToProduction()
 

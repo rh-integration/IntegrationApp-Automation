@@ -1,0 +1,37 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "fuse-alert-service",
+    "description": "Service to send the alert to user",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/alerts": {
+      "post": {
+        "summary": "Alert Service",
+        "operationId": "alert",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/UserInfo"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "created"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "UserInfo": {
+      "description": "User information Object, input as request body contain ",
+      "type": "object"
+    }
+  }
+}

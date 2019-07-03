@@ -1,0 +1,31 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "fuse-user-service",
+    "description": "Service contains user information",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/users/profile/{id}": {
+      "get": {
+        "summary": "User info by ID",
+        "description": "Get user information by User ID number",
+        "operationId": "getProfile",
+        "responses": {
+          "200": {
+            "description": "User information Found"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "user id number",
+          "required": true,
+          "type": "string"
+        }
+      ]
+    }
+  }
+}

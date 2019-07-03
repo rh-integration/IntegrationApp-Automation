@@ -2,4 +2,6 @@
 /.settings
 .idea/
 cicd-3scale/.project
+.classpath
+.project
 

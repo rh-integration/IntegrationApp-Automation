@@ -5,10 +5,10 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.redhat</groupId>
-	<artifactId>maingateway-service</artifactId>
+	<artifactId>fuse-alert-service</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
-	<name>Fuse Integration Service :: gateway :: Service</name>
-	<description>Fuse Integration Service - main gateway Service</description>
+	<name>Fuse Integration Service :: Alert :: Message</name>
+	<description>Fuse Integration Service - Alert Service</description>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
@@ -35,19 +35,14 @@
 		</dependencies>
 	</dependencyManagement>
 
-
 	<dependencies>
 		<dependency>
-			<groupId>org.apache.camel</groupId>
-			<artifactId>camel-spring-boot-starter</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.camel</groupId>
@@ -62,44 +57,51 @@
 			<artifactId>camel-swagger-java-starter</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.camel</groupId>
-			<artifactId>camel-http-starter</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<!-- For Hystrix -->
-		<dependency>
-			<groupId>org.apache.camel</groupId>
-			<artifactId>camel-hystrix-starter</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.camel</groupId>
-			<artifactId>camel-jsonpath-starter</artifactId>
-		</dependency>
-		<!-- For Testing -->
-		<dependency>
-			<groupId>org.apache.httpcomponents</groupId>
-			<artifactId>httpclient</artifactId>
-			<scope>test</scope>
+			<groupId>org.apache.activemq</groupId>
+			<artifactId>activemq-camel</artifactId>
+			<version>5.11.0.redhat-630377</version>
 		</dependency>
 
+		<dependency>
+			<groupId>org.apache.activemq</groupId>
+			<artifactId>activemq-pool</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.camel</groupId>
+			<artifactId>camel-spring-boot-starter</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-validator</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.jboss.arquillian.junit</groupId>
 			<artifactId>arquillian-junit-container</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>io.fabric8</groupId>
-			<artifactId>fabric8-arquillian</artifactId>
-			<scope>test</scope>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+			 <version>2.1.6.RELEASE</version>
+			
+		</dependency>
+
+		<!--health Check -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.camel</groupId>
+			<artifactId>camel-http</artifactId>
+			<version>2.21.0.fuse-730078-redhat-00001</version>
+			
 		</dependency>
 	</dependencies>
 	<build>
@@ -219,3 +221,4 @@
 	</pluginRepositories>
 
 </project>
+	

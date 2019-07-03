@@ -32,7 +32,7 @@ To run this booster on your local host:
 - $ npm install && npm start
 - http://localhost:8080/
 
-![Application View](images/application_launch_view.png "Application View")
+![Application View](../images/application_launch_view.png "Application View")
 
 == Running the Booster on a Single-node OpenShift Cluster
 If you have a single-node OpenShift cluster, such as Minishift or Red Hat Container Development Kit, link:http://launcher.fabric8.io/docs/minishift-installation.html[installed and running], you can also deploy your booster there. A single-node OpenShift cluster provides you with access to a cloud environment that is similar to a production environment.

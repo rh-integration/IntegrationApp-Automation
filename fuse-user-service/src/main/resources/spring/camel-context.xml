@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd        http://camel.apache.org/schema/spring       http://camel.apache.org/schema/spring/camel-spring.xsd">
+    <bean
+        class="org.springframework.jdbc.datasource.DataSourceTransactionManager"
+        id="txManager" scope="singleton">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+    <bean
+        class="org.apache.camel.component.servlet.CamelHttpTransportServlet"
+        id="camelHttpTransportServlet" scope="singleton"/>
+    <bean
+        class="org.springframework.boot.web.servlet.ServletRegistrationBean"
+        id="servlet" scope="singleton">
+        <property name="name" value="CamelServlet"/>
+        <property name="servlet" ref="camelHttpTransportServlet"/>
+        <property name="urlMappings" value="/cicd/*"/>
+    </bean>
+    <camelContext id="context1" xmlns="http://camel.apache.org/schema/spring">
+        <onException>
+            <exception>java.lang.Exception</exception>
+            <handled>
+                <constant>true</constant>
+            </handled>
+            <setHeader headerName="Exchange.HTTP_RESPONSE_CODE">
+                <constant>500</constant>
+            </setHeader>
+            <setBody>
+                <simple>${exception.message}</simple>
+            </setBody>
+        </onException>
+        <restConfiguration apiContextPath="/openapi.json" component="servlet"/>
+        <rest enableCORS="true" id="rest1" path="/">
+            <get id="openapi.json" produces="application/json" uri="userservice-spec.json">
+                <description>Gets the openapi document for this service</description>
+                <route id="rest1-route1">
+                    <setHeader headerName="Exchange.CONTENT_TYPE" id="setHeader-route1">
+                        <constant>application/vnd.oai.openapi+json</constant>
+                    </setHeader>
+                    <setBody id="setBody-route1">
+                        <simple>resource:classpath:userservice-spec.json</simple>
+                    </setBody>
+                </route>
+            </get>
+        </rest>
+        <rest bindingMode="json" enableCORS="true" id="rest-f9f2d715-ba75-41da-9e1e-ad6cb486979e">
+            <get id="getProfile" uri="/users/profile/{id}">
+                <description>Get user information by User ID number</description>
+                <param dataType="string" description="user id number"
+                    name="id" required="true" type="path"/>
+                <to uri="direct:getProfile"/>
+            </get>
+        </rest>
+        <route id="user profile route">
+            <!--             <to id="_to1" uri="sql:select * from userprofile where id=:#id?outputClass=com.redhat.myfispipeline.UserProfiles&amp;dataSource=dataSource&amp;outputType=SelectOne"/> -->
+            <!--              <to uri="bean:UserProfileList?method=get(0)"/> -->
+            <from id="_from1" uri="direct:getProfile"/>
+            <log id="_log1" message="Profile ${headers.id}"/>
+            <to id="_to1" uri="sql:select * from userprofile where id=:#id?outputClass=com.redhat.myfispipeline.UserProfiles&amp;dataSource=dataSource&amp;outputType=SelectOne"/>
+            <log id="_log2" message="output: ${body}"/>
+        </route>
+    </camelContext>
+</beans>

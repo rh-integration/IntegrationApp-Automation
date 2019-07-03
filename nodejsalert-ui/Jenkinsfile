@@ -1,18 +1,18 @@
 pipeline {
     agent any
-    parameters{
-        string (defaultValue: 'notinuse', name:'OPENSHIFT_HOST', description:'open shift cluster url')
-        string (defaultValue: 'notinuse', name:'OPENSHIFT_TOKEN', description:'open shift token')
-        string (defaultValue: 'docker-registry.default.svc:5000', name:'IMAGE_REGISTRY', description:'open shift token')
-        string (defaultValue: 'rh-dev', name:'IMAGE_NAMESPACE', description:'name space where image deployed')
-        string (defaultValue: 'rh-dev', name:'DEV_PROJECT', description:'build or development project')
-        string (defaultValue: 'rh-test', name:'TEST_PROJECT', description:'Test project')
-        string (defaultValue: 'rh-prod', name:'PROD_PROJECT', description:'Production project')
-        string (defaultValue: 'https://github.com/rh-integration/IntegrationApp-Automation.git', name:'GIT_REPO', description:'Git source')
-        string (defaultValue: 'master', name:'GIT_BRANCH', description:'Git branch in the source git')
-        string (defaultValue: 'rel1.1', name:'SERVICE_VERSION', description:'Service version to be built')
-        booleanParam (defaultValue: false, name:'BLUEGREEN_DEPLOYMENT', description:'Deploy Green version to Test/Production (default: normal deployment)')
-        booleanParam (defaultValue: false, name:'SELECT_DEPLOY_TO_PROD', description:'Approval to deploy to Production (default: no deployment to production)')
+    parameters {
+        string(defaultValue: 'notinuse', name: 'OPENSHIFT_HOST', description: 'open shift cluster url')
+        string(defaultValue: 'notinuse', name: 'OPENSHIFT_TOKEN', description: 'open shift token')
+        string(defaultValue: 'docker-registry.default.svc:5000', name: 'IMAGE_REGISTRY', description: 'open shift token')
+        string(defaultValue: 'rh-dev', name: 'IMAGE_NAMESPACE', description: 'name space where image deployed')
+        string(defaultValue: 'rh-dev', name: 'DEV_PROJECT', description: 'build or development project')
+        string(defaultValue: 'rh-test', name: 'TEST_PROJECT', description: 'Test project')
+        string(defaultValue: 'rh-prod', name: 'PROD_PROJECT', description: 'Production project')
+        string(defaultValue: 'https://github.com/rh-integration/IntegrationApp-Automation.git', name: 'GIT_REPO', description: 'Git source')
+        string(defaultValue: 'master', name: 'GIT_BRANCH', description: 'Git branch in the source git')
+        string(defaultValue: 'rel1.1', name: 'SERVICE_VERSION', description: 'Service version to be built')
+        booleanParam(defaultValue: false, name: 'BLUEGREEN_DEPLOYMENT', description: 'Deploy Green version to Test/Production (default: normal deployment)')
+        booleanParam(defaultValue: false, name: 'SELECT_DEPLOY_TO_PROD', description: 'Approval to deploy to Production (default: no deployment to production)')
     }
     environment {
         MODULE_NAME = 'nodejsalert-ui'
@@ -23,33 +23,73 @@ pipeline {
                 srcTag = 'latest'
             }
             when {
-              expression {
-                  params.SELECT_DEPLOY_TO_PROD == false
-              }
+                expression {
+                    params.SELECT_DEPLOY_TO_PROD == false
+                }
             }
             steps {
                 echo "Building.. ${MODULE_NAME}"
-                node ('nodejs') {
-                    git url: params.GIT_REPO, branch: params.GIT_BRANCH
 
-                    script {
-                        sh """
-                        cd ${MODULE_NAME}
+                git url: params.GIT_REPO, branch: params.GIT_BRANCH
 
-                        oc project ${DEV_PROJECT}
+                script {
 
-                        npm install && npm run openshift
-                        """
+
+                    def templatePath = 'nodejsalert-ui/resources/nodejs.json'
+                    openshift.withCluster() {
+                        openshift.withProject() {
+
+                            echo "delete everything created with template ..."
+
+                            if (openshift.selector('dc', MODULE_NAME).exists()) {
+                                openshift.selector('dc', MODULE_NAME).delete()
+                                openshift.selector('svc', MODULE_NAME).delete()
+                                openshift.selector('route', MODULE_NAME).delete()
+                                openshift.selector('is', MODULE_NAME).delete()
+
+                            }
+                            if (openshift.selector("bc", MODULE_NAME).exists()) {
+                                openshift.selector('bc', MODULE_NAME).delete()
+                            }
+
+                            if (openshift.selector("secrets", MODULE_NAME).exists()) {
+                                openshift.selector("secrets", MODULE_NAME).delete()
+                            }
+
+
+                            echo "create a new application from the templatePath..."
+
+                            openshift.newApp(templatePath)
+
+                            echo "start Build  ..."
+                            def builds = openshift.selector("bc", env.MODULE_NAME).related('builds')
+                            builds.logs('-f')
+                            builds.watch {
+                                echo " ${builds.name()} has created builds: ${it.names()}"
+                                return it.count() > 0
+                            }
+                            builds.untilEach(1) {
+                                return (it.object().status.phase == "Complete")
+                            }
+
+                            echo "start Deployment ..."
+
+                            def rm = openshift.selector("dc", env.MODULE_NAME).rollout()
+                            openshift.selector("dc", env.MODULE_NAME).related('pods').untilEach(1) {
+                                return (it.object().status.phase == "Running")
+                            }
+                        }
                     }
                 }
+
                 tagImage(params.IMAGE_NAMESPACE, params.DEV_PROJECT, env.MODULE_NAME, env.srcTag, params.SERVICE_VERSION)
             }
         }
         stage('Pushing Green version to Test') {
             when {
-              expression {
-                  (params.BLUEGREEN_DEPLOYMENT == true && params.SELECT_DEPLOY_TO_PROD == false)
-              }
+                expression {
+                    (params.BLUEGREEN_DEPLOYMENT == true && params.SELECT_DEPLOY_TO_PROD == false)
+                }
             }
             environment {
                 destTag = 'promoteTest'
@@ -57,28 +97,33 @@ pipeline {
             steps {
                 echo "Deploy ${MODULE_NAME} Green to ${TEST_PROJECT} "
                 tagImage(params.IMAGE_NAMESPACE, params.DEV_PROJECT, env.MODULE_NAME, params.SERVICE_VERSION, env.destTag)
-                promoteBlueGreenServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, env.MODULE_NAME,params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, params.SERVICE_VERSION, params.TEST_PROJECT)
+                promoteBlueGreenServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, env.MODULE_NAME, params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, params.SERVICE_VERSION, params.TEST_PROJECT)
                 promoteService(params.IMAGE_NAMESPACE, params.TEST_PROJECT, env.MODULE_NAME + "-" + params.SERVICE_VERSION)
             }
         }
         stage('Dev-Env smoke-test') {
             when {
-              expression {
-                  (params.SELECT_DEPLOY_TO_PROD == false)
-              }
+                expression {
+                    (params.SELECT_DEPLOY_TO_PROD == false)
+                }
             }
             steps {
                 script {
-                    serviceName = 'nodejsalert-ui'
-                    makeGetRequest("http://${serviceName}:8080")
+
+                    echo "Waiting for deployment to complete prior starting smoke testing"
+                    sleep 60
+                    retry(5) {
+                        serviceName = 'nodejsalert-ui'
+                        makeGetRequest("http://${serviceName}:8080")
+                    }
                 }
             }
         }
         stage('Pushing to Test') {
             when {
-              expression {
-                  params.SELECT_DEPLOY_TO_PROD == false
-              }
+                expression {
+                    params.SELECT_DEPLOY_TO_PROD == false
+                }
             }
             environment {
                 srcTag = 'latest'
@@ -87,23 +132,24 @@ pipeline {
             steps {
                 echo "Deploy ${MODULE_NAME} to ${TEST_PROJECT} "
                 tagImage(params.IMAGE_NAMESPACE, params.DEV_PROJECT, env.MODULE_NAME, env.srcTag, env.destTag)
-                promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, env.MODULE_NAME,params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.TEST_PROJECT)
+                promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, env.MODULE_NAME, params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.TEST_PROJECT)
                 promoteService(params.IMAGE_NAMESPACE, params.TEST_PROJECT, env.MODULE_NAME)
             }
         }
-	stage('Test-Env smoke-test') {
+        stage('Test-Env smoke-test') {
             when {
-              expression {
-                  (params.SELECT_DEPLOY_TO_PROD == false)
-              }
+                expression {
+                    (params.SELECT_DEPLOY_TO_PROD == false)
+                }
             }
             steps {
                 script {
                     echo "Waiting for deployment to complete prior starting smoke testing"
                     sleep 60
-
-                    serviceName = 'nodejsalert-ui'
-                    makeGetRequest("http://${serviceName}:8080")
+                    retry(5) {
+                        serviceName = 'nodejsalert-ui'
+                        makeGetRequest("http://${serviceName}:8080")
+                    }
                 }
             }
         }
@@ -116,24 +162,24 @@ pipeline {
             steps {
                 script {
                     try {
-                        timeout (time:2, unit:'HOURS') {
+                        timeout(time: 2, unit: 'HOURS') {
                             env.userProdApproval = input(id: 'userInput', message: "Do you approve this build to promote to production?")
                             env.userProdApproval = 'Approved'
                         }
                     } catch (exception) {
-                      env.userProdApproval='---'
+                        env.userProdApproval = '---'
                     }
 
                     println("User approval to production " + env.userProdApproval);
                 }
             }
         }
-       
+
         stage('Pushing to Prod') {
             when {
-              expression {
-                env.userProdApproval == 'Approved'
-              }
+                expression {
+                    env.userProdApproval == 'Approved'
+                }
             }
             environment {
                 srcTag = 'latest'
@@ -142,15 +188,15 @@ pipeline {
             steps {
                 echo "Deploy ${MODULE_NAME} to ${PROD_PROJECT} "
                 tagImage(params.IMAGE_NAMESPACE, params.DEV_PROJECT, env.MODULE_NAME, env.srcTag, env.destTag)
-                promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, env.MODULE_NAME,params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.PROD_PROJECT)
+                promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, env.MODULE_NAME, params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.PROD_PROJECT)
                 promoteService(params.IMAGE_NAMESPACE, params.PROD_PROJECT, env.MODULE_NAME)
             }
         }
         stage('Pushing Green version to Production') {
             when {
-              expression {
-                  (env.userProdApproval == 'Approved' && params.BLUEGREEN_DEPLOYMENT == true)
-              }
+                expression {
+                    (env.userProdApproval == 'Approved' && params.BLUEGREEN_DEPLOYMENT == true)
+                }
             }
             environment {
                 destTag = 'promoteProd'
@@ -158,21 +204,23 @@ pipeline {
             steps {
                 echo "Deploy ${MODULE_NAME} Green to ${PROD_PROJECT} "
                 tagImage(params.IMAGE_NAMESPACE, params.DEV_PROJECT, env.MODULE_NAME, params.SERVICE_VERSION, env.destTag)
-                promoteBlueGreenServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, env.MODULE_NAME,params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, params.SERVICE_VERSION, params.PROD_PROJECT)
+                promoteBlueGreenServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, env.MODULE_NAME, params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, params.SERVICE_VERSION, params.PROD_PROJECT)
                 promoteService(params.IMAGE_NAMESPACE, params.PROD_PROJECT, env.MODULE_NAME + "-" + params.SERVICE_VERSION)
             }
         }
 
         stage('Prod-Env smoke-test') {
             when {
-              expression {
-                 env.userProdApproval == 'Approved'
-              }
+                expression {
+                    env.userProdApproval == 'Approved'
+                }
             }
             steps {
                 script {
-                    serviceName = 'nodejsalert-ui'
-                    makeGetRequest("http://${serviceName}:8080")
+                    retry(5) {
+                        serviceName = 'nodejsalert-ui'
+                        makeGetRequest("http://${serviceName}:8080")
+                    }
                 }
             }
         }
@@ -181,36 +229,45 @@ pipeline {
 
 def promoteBlueGreenServiceSetup(openShiftHost, openShiftToken, svcName, registry, imageNameSpace, tagName, projName) {
 
-    try{
-      sh """
+    try {
+        sh """
           oc delete svc ${svcName}-green -n ${projName} 2> /dev/null
           echo "Finished clean up"
       """
     } catch (Exception e) {
-      echo "skip dc/svc/route creation related exception. " + e.getMessage();
+        echo "skip dc/svc/route creation related exception. " + e.getMessage();
     }
-    try{
-      sh """
+    try {
+        sh """
           oc delete dc ${svcName}-${tagName} -n ${projName} 2> /dev/null
           echo "Finished clean up"
       """
     } catch (Exception e) {
-      echo "skip dc/svc/route creation related exception. " + e.getMessage();
+        echo "skip dc/svc/route creation related exception. " + e.getMessage();
     }
     try {
         sh """ 
-            oc create dc ${svcName}-${tagName} --image=${registry}/${imageNameSpace}/${svcName}:${tagName} -n ${projName} 2> /dev/null 
+            oc create dc ${svcName}-${tagName} --image=${registry}/${imageNameSpace}/${svcName}:${tagName} -n ${
+            projName
+        } 2> /dev/null 
             oc rollout pause dc ${svcName}-${tagName} -n ${projName}  2> /dev/null
-            oc patch dc ${svcName}-${tagName} -p '{"spec": {"template": {"spec": {"containers": [{"name": "default-container","imagePullPolicy": "Always"}]}}}}' -n ${projName} 2> /dev/null
+            oc patch dc ${svcName}-${
+            tagName
+        } -p '{"spec": {"template": {"spec": {"containers": [{"name": "default-container","imagePullPolicy": "Always"}]}}}}' -n ${
+            projName
+        } 2> /dev/null
             oc set env dc ${svcName}-${tagName} APP_NAME=${svcName} -n ${projName}  2> /dev/null
             oc rollout resume dc ${svcName}-${tagName} -n ${projName}  2> /dev/null
-            oc expose dc ${svcName}-${tagName} --name=${svcName}-green --type=ClusterIP --port=80 --protocol=TCP --target-port=8080 -n ${projName}  2> /dev/null
+            oc expose dc ${svcName}-${tagName} --name=${
+            svcName
+        }-green --type=ClusterIP --port=80 --protocol=TCP --target-port=8080 -n ${projName}  2> /dev/null
             echo "Finished creation"
         """
     } catch (Exception e) {
-      echo "skip dc/svc/route creation related exception, the resource may already exist. " + e.getMessage();
+        echo "skip dc/svc/route creation related exception, the resource may already exist. " + e.getMessage();
     }
 }
+
 def promoteServiceSetup(openShiftHost, openShiftToken, svcName, registry, imageNameSpace, tagName, projName) {
     try {
         sh """
@@ -223,42 +280,48 @@ def promoteServiceSetup(openShiftHost, openShiftToken, svcName, registry, imageN
         sh """ 
             oc create dc ${svcName} --image=${registry}/${imageNameSpace}/${svcName}:${tagName} -n ${projName} 2> /dev/null 
             oc rollout pause dc ${svcName} -n ${projName}  2> /dev/null
-            oc patch dc ${svcName} -p '{"spec": {"template": {"spec": {"containers": [{"name": "default-container","imagePullPolicy": "Always"}]}}}}' -n ${projName} 2> /dev/null
+            oc patch dc ${
+            svcName
+        } -p '{"spec": {"template": {"spec": {"containers": [{"name": "default-container","imagePullPolicy": "Always"}]}}}}' -n ${
+            projName
+        } 2> /dev/null
             oc set env dc ${svcName} APP_NAME=${svcName} -n ${projName} 2> /dev/null
             oc rollout resume dc ${svcName} -n ${projName}  2> /dev/null
             oc expose dc ${svcName} --type=ClusterIP  --port=80 --protocol=TCP --target-port=8080 -n ${projName}  2> /dev/null
             oc expose svc ${svcName} --name=${svcName} -n ${projName}  2> /dev/null
         """
     } catch (Exception e) {
-      echo "skip dc/svc/route creation related exception, the resource may already exist. " + e.getMessage();
+        echo "skip dc/svc/route creation related exception, the resource may already exist. " + e.getMessage();
     }
 }
+
 def tagImage(imageNamespace, projName, svcName, sourceTag, destinationTag) {
     script {
         openshift.withCluster() {
-            openshift.withProject( imageNamespace ) {
+            openshift.withProject(imageNamespace) {
                 echo "tagging the build for ${MODULE_NAME} ${sourceTag} to ${destinationTag} in ${imageNamespace} "
                 openshift.tag("${MODULE_NAME}:${sourceTag}", "${MODULE_NAME}:${destinationTag}")
             }
         }
     }//script
 }
-def promoteService (imageNamespace, projName, dcName) {
+
+def promoteService(imageNamespace, projName, dcName) {
     echo "Deploying service ${projName} to ${dcName}"
     script {
-         echo "deploying the ${dcName} to ${projName} "
-         openshift.withCluster() {
-             openshift.withProject( projName) {
+        echo "deploying the ${dcName} to ${projName} "
+        openshift.withCluster() {
+            openshift.withProject(projName) {
                 def dply = openshift.selector("dc", dcName)
-                echo "waiting for ... "+ dply.rollout().status()
-             }
-         }
-     }//script
+                echo "waiting for ... " + dply.rollout().status()
+            }
+        }
+    }//script
 }
 
 def makeGetRequest(url) {
 
-       sh"""set -e +x
+    sh """set -e +x
           curl -k -f -w "SmokeTest: %{http_code}\n" -o /dev/null -s ${url}
         """
 

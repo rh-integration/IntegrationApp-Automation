@@ -17,7 +17,7 @@ pipeline {
         booleanParam (defaultValue: false, name:'SELECT_DEPLOY_TO_PROD', description:'Approval to deploy to Production (default: no deployment to production)')
     }
     environment {
-        MODULE_NAME = 'maingateway-service'
+        MODULE_NAME = 'fuse-alert-service'
     }
     stages {
         stage ('source') {
@@ -42,51 +42,53 @@ pipeline {
         }
         stage('Dev-Env smoke-test') {
             when {
-                expression {
-                    params.SELECT_DEPLOY_TO_PROD == false
-                }
+              expression {
+                  (params.SELECT_DEPLOY_TO_PROD == false)
+              }
             }
             steps {
                 script {
+
                     echo "Waiting for deployment to complete prior starting smoke testing"
                     sleep 60
                     retry(5) {
-                        serviceName = 'maingateway-service:8080'
-                        smokeTestOperation = 'cicd/maingateway/profile/11111?alertType=ACCIDENT'
-                        makeGetRequest("http://${serviceName}/${smokeTestOperation}")
+                        serviceName = 'fuse-alert-service:8080'
+                        smokeTestOperation = 'cicd/alerts'
+                        body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
+                        makePostRequest("http://${serviceName}/${smokeTestOperation}", body, 'POST')
                     }
                 }
             }
         }
         stage('Pushing to Test') {
-            environment {
+          when {
+             expression {
+                (params.SELECT_DEPLOY_TO_PROD == false)
+            }
+          }
+          environment {
                 srcTag = 'latest'
                 destTag = 'promoteTest'
-            }
-            when {
-                expression {
-                    params.SELECT_DEPLOY_TO_PROD == false
-                }
             }
             steps {
                 echo "Deploy ${MODULE_NAME} to ${TEST_PROJECT} "
                 promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, env.MODULE_NAME,params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.TEST_PROJECT)
-                promoteService(params.IMAGE_NAMESPACE, params.TEST_PROJECT,env.MODULE_NAME, env.srcTag, env.destTag)
+                promoteService(params.IMAGE_NAMESPACE, params.TEST_PROJECT, env.MODULE_NAME, env.srcTag, env.destTag)
             }
         }
-        stage('Test-Env smoke-test') {
+	 stage('Test-Env smoke-test') {
             when {
-                expression {
-                    params.SELECT_DEPLOY_TO_PROD == false
-                }
+              expression {
+                  (params.SELECT_DEPLOY_TO_PROD == false)
+              }
             }
             steps {
                 script {
                     retry(5) {
-                        sh "oc project ${TEST_PROJECT}"
-                        serviceName = 'maingateway-service:8080'
-                        smokeTestOperation = 'cicd/maingateway/profile/11111?alertType=ACCIDENT'
-                        makeGetRequest("http://${serviceName}/${smokeTestOperation}")
+                        serviceName = 'fuse-alert-service:8080'
+                        smokeTestOperation = 'cicd/alerts'
+                        body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
+                        makePostRequest("http://${serviceName}/${smokeTestOperation}", body, 'POST')
                     }
                 }
             }
@@ -107,10 +109,12 @@ pipeline {
                     } catch (exception) {
                       env.userProdApproval='---'
                     }
+
                     println("User approval to production " + env.userProdApproval);
                 }
             }
         }
+       
         stage('Pushing to Prod') {
             environment {
                 srcTag = 'latest'
@@ -128,18 +132,20 @@ pipeline {
                 promoteService(params.IMAGE_NAMESPACE, params.PROD_PROJECT, env.MODULE_NAME,  env.srcTag, env.destTag)
             }
         }
+
         stage('Prod-Env smoke-test') {
             when {
-                expression {
-                    env.userProdApproval == 'Approved'
-                }
+              expression {
+                  env.userProdApproval == 'Approved'
+              }
             }
             steps {
                 script {
                     retry(5) {
-                        serviceName = 'maingateway-service:8080'
-                        smokeTestOperation = 'cicd/maingateway/profile/11111?alertType=ACCIDENT'
-                        makeGetRequest("http://${serviceName}/${smokeTestOperation}")
+                        serviceName = 'fuse-alert-service:8080'
+                        smokeTestOperation = 'cicd/alerts'
+                        body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
+                        makePostRequest("http://${serviceName}/${smokeTestOperation}", body, 'POST')
                     }
                 }
             }
@@ -170,7 +176,7 @@ def promoteServiceSetup(openShiftHost, openShiftToken, svcName, registry, imageN
     }
 }
 def promoteService (imageNamespace, projName, svcName, sourceTag, destinationTag) {
-     script {
+    script {
          openshift.withCluster() {
              openshift.withProject( imageNamespace ) {
                  echo "tagging the build for ${projName} ${sourceTag} to ${destinationTag} in ${imageNamespace} "
@@ -206,11 +212,14 @@ def deploy(folderName, projName, openShiftHost, openShiftToken) {
     """
 }
 
+def makePostRequest(url, body, method) {
 
-def makeGetRequest(url) {
+	sh"""set -e +x
 
-    sh"""set -e +x
-      curl -k -f -w "SmokeTest: %{http_code}\n" -o /dev/null -s ${url}
-    """
+        curl -X POST   ${url} \
+        -H 'cache-control: no-cache' \
+        -H 'content-type: application/json' \
+        -d '${body}'
 
+         """
 }
