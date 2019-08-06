@@ -19,17 +19,22 @@
         <property name="servlet" ref="hystrixEventStreamServlet"/>
         <property name="urlMappings" value="/hystrix.stream"/>
     </bean>
-    <camelContext id="camelContext-a73e7fe1-456e-4e15-9926-fae906325f11" xmlns="http://camel.apache.org/schema/spring">
-        <restConfiguration apiContextPath="api-docs" bindingMode="json"
-            component="servlet" contextPath="/cicd" enableCORS="true">
-            <apiProperty key="cors" value="true"/>
-            <apiProperty key="api.title" value="Fuse-Useralert-API-"/>
-            <apiProperty key="api.version" value="1.0.0"/>
-            <corsHeaders key="Access-Control-Allow-Origin" value="*"/>
-            <corsHeaders key="Access-Control-Allow-Methods" value="GET, HEAD, POST, PUT, DELETE, TRACE, OPTIONS, CONNECT, PATCH"/>
-            <corsHeaders key="Access-Control-Allow-Headers" value="Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers"/>
-        </restConfiguration>
-        <rest id="rest-8d179769-5395-472c-ab84-7d880406b33c">
+    <camelContext id="context1" xmlns="http://camel.apache.org/schema/spring">
+        <restConfiguration apiContextPath="/openapi.json" component="servlet"/>
+        <rest enableCORS="true" id="rest1" path="/">
+            <get id="openapi.json" produces="application/json" uri="openapi-spec.json">
+                <description>Gets the openapi document for this service</description>
+                <route id="rest1-route1">
+                    <setHeader headerName="Exchange.CONTENT_TYPE" id="setHeader-route1">
+                        <constant>application/vnd.oai.openapi+json</constant>
+                    </setHeader>
+                    <setBody id="setBody-route1">
+                        <simple>resource:classpath:openapi-spec.json</simple>
+                    </setBody>
+                </route>
+            </get>
+        </rest>
+        <rest bindingMode="json" enableCORS="true" id="rest-8d179769-5395-472c-ab84-7d880406b33c">
             <get id="alertUser" uri="/maingateway/profile/{id}">
                 <description>Send the alert to user by providing user id and alert type</description>
                 <param dataType="string" description="user id number"
@@ -48,9 +53,9 @@
             <hystrix id="_hystrix5">
                 <hystrixConfiguration
                     circuitBreakerSleepWindowInMilliseconds="10000" executionTimeoutInMilliseconds="5000"/>
-                <recipientList id="_userservice">
-                    <!--                     <simple>http://fisuser-service-cicddemo.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com/cicd/user/profile/${header.acctid}?bridgeEndpoint=true</simple> -->
-                    <simple>http://fisuser-service/cicd/users/profile/${header.id}?bridgeEndpoint=true</simple>
+                <recipientList id="_userservice"  >
+                    <!--                     <simple>http://fuse-user-service-cicddemo.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com/cicd/user/profile/${header.acctid}?bridgeEndpoint=true</simple> -->
+                    <simple>http://fuse-user-service:8080/cicd/users/profile/${header.id}?bridgeEndpoint=true</simple>
                 </recipientList>
                 <convertBodyTo id="_convertBodyTo1" type="java.lang.String"/>
                 <unmarshal id="_unmarshal1">
@@ -62,9 +67,9 @@
                 <setHeader headerName="CamelHttpMethod" id="_setHeader3">
                     <constant>POST</constant>
                 </setHeader>
-                <recipientList id="_alertservice">
-                    <!--                     <simple>http://fisalert-service-cicddemo.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com/cicd/alert?bridgeEndpoint=true</simple> -->
-                    <simple>http://fisalert-service/cicd/alerts?bridgeEndpoint=true</simple>
+                <recipientList id="_alertservice"   >
+                    <!--                     <simple>http://fuse-alert-service-cicddemo.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com/cicd/alert?bridgeEndpoint=true</simple> -->
+                    <simple>http://fuse-alert-service:8080/cicd/alerts?bridgeEndpoint=true</simple>
                 </recipientList>
                 <convertBodyTo id="_convertBodyTo2" type="java.lang.String"/>
                 <unmarshal id="_unmarshal2">

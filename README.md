@@ -41,8 +41,8 @@ An integration application consisting of Multiple services working in combinatio
 This demo contains below applications.
 
    1. [Gateway application](https://github.com/rh-integration/IntegrationApp-Automation/tree/master/maingateway-service).
-   2. [User Service application ](https://github.com/rh-integration/IntegrationApp-Automation/tree/master/fisuser-service)
-   3. [Alert Service Application ](https://github.com/rh-integration/IntegrationApp-Automation/tree/master/fisalert-service)
+   2. [User Service application ](https://github.com/rh-integration/IntegrationApp-Automation/tree/master/fuse-user-service)
+   3. [Alert Service Application ](https://github.com/rh-integration/IntegrationApp-Automation/tree/master/fuse-alert-service)
    4. [Node.js Web application](https://github.com/rh-integration/IntegrationApp-Automation/tree/master/nodejsalert-ui)
    5. [3scale Toolbox Jenkins Pipeline](https://github.com/rh-integration/IntegrationApp-Automation/tree/master/cicd-3scale).
      
@@ -107,8 +107,8 @@ DISABLE_TLS_VALIDATION                                                      yes
 ##### To list the parameters of each template:
 ```sh
 
-# list for fisuser-service pipeline
-oc process --parameters -f fisuser-service/src/main/resources/pipeline-app-build.yml
+# list for fuse-user-service pipeline
+oc process --parameters -f fuse-user-service/src/main/resources/pipeline-app-build.yml
 
 # list for maingateway-service pipeline
 oc process --parameters -f  maingateway-service/src/main/resources/pipeline-app-build.yml
@@ -116,8 +116,8 @@ oc process --parameters -f  maingateway-service/src/main/resources/pipeline-app-
 # list for nodejsalert-ui pipeline
 oc process --parameters -f  nodejsalert-ui/resources/pipeline-app-build.yml
 
-# list for fisalert-service pipeline
-oc process --parameters -f  fisalert-service/src/main/resources/pipeline-app-build.yml
+# list for fuse-alert-service pipeline
+oc process --parameters -f  fuse-alert-service/src/main/resources/pipeline-app-build.yml
 
 # list for aggregated-pipeline
 oc process --parameters -f  pipelinetemplates/pipeline-aggregated-build.yml
@@ -137,10 +137,10 @@ oc project rh-dev
 
 ```sh
 
-oc delete bc fisuser-service-pipeline
+oc delete bc fuse-user-service-pipeline
 oc delete bc maingateway-service-pipeline
 oc delete bc nodejsalert-ui-pipeline
-oc delete bc fisalert-service-pipeline
+oc delete bc fuse-alert-service-pipeline
 oc delete bc aggregated-pipeline
 oc delete bc publish-api-3scale
 
@@ -148,8 +148,8 @@ oc delete bc publish-api-3scale
 
 ```sh
 
-# import fisuser-service pipeline
-oc new-app -f fisuser-service/src/main/resources/pipeline-app-build.yml -p IMAGE_REGISTRY=docker-registry.default.svc:5000 -p IMAGE_NAMESPACE=rh-dev -p DEV_PROJECT=rh-dev -p TEST_PROJECT=rh-test -p PROD_PROJECT=rh-prod
+# import fuse-user-service pipeline
+oc new-app -f fuse-user-service/src/main/resources/pipeline-app-build.yml -p IMAGE_REGISTRY=docker-registry.default.svc:5000 -p IMAGE_NAMESPACE=rh-dev -p DEV_PROJECT=rh-dev -p TEST_PROJECT=rh-test -p PROD_PROJECT=rh-prod
 
 # import maingateway-service pipeline
 oc new-app -f maingateway-service/src/main/resources/pipeline-app-build.yml -p IMAGE_REGISTRY=docker-registry.default.svc:5000 -p IMAGE_NAMESPACE=rh-dev -p DEV_PROJECT=rh-dev -p TEST_PROJECT=rh-test -p PROD_PROJECT=rh-prod
@@ -157,8 +157,8 @@ oc new-app -f maingateway-service/src/main/resources/pipeline-app-build.yml -p I
 # import nodejsalert-ui pipeline
 oc new-app -f nodejsalert-ui/resources/pipeline-app-build.yml -p IMAGE_REGISTRY=docker-registry.default.svc:5000 -p IMAGE_NAMESPACE=rh-dev -p DEV_PROJECT=rh-dev -p TEST_PROJECT=rh-test -p PROD_PROJECT=rh-prod
 
-# import fisalert-service pipeline
-oc new-app -f fisalert-service/src/main/resources/pipeline-app-build.yml -p IMAGE_REGISTRY=docker-registry.default.svc:5000 -p IMAGE_NAMESPACE=rh-dev -p DEV_PROJECT=rh-dev -p TEST_PROJECT=rh-test -p PROD_PROJECT=rh-prod
+# import fuse-alert-service pipeline
+oc new-app -f fuse-alert-service/src/main/resources/pipeline-app-build.yml -p IMAGE_REGISTRY=docker-registry.default.svc:5000 -p IMAGE_NAMESPACE=rh-dev -p DEV_PROJECT=rh-dev -p TEST_PROJECT=rh-test -p PROD_PROJECT=rh-prod
 
 # import aggregated-pipeline
 oc new-app -f pipelinetemplates/pipeline-aggregated-build.yml -p IMAGE_REGISTRY=docker-registry.default.svc:5000 -p IMAGE_NAMESPACE=rh-dev -p DEV_PROJECT=rh-dev -p TEST_PROJECT=rh-test -p PROD_PROJECT=rh-prod  -p PRIVATE_BASE_URL=http://maingateway-service-rh-test.app.middleware.ocp.cloud.lab.eng.bos.redhat.com -p PUBLIC_PRODUCTION_WILDCARD_DOMAIN=app.middleware.ocp.cloud.lab.eng.bos.redhat.com -p PUBLIC_STAGING_WILDCARD_DOMAIN=staging.app.middleware.ocp.cloud.lab.eng.bos.redhat.com -p DEVELOPER_ACCOUNT_ID=developer
@@ -168,6 +168,14 @@ oc new-app -f cicd-3scale/3scaletoolbox/pipeline-template.yaml  -p IMAGE_NAMESPA
 
 
 ```
+#### Set the  IMAGE_REGISTRY in pipeline 
+
+if you're using openshift 4 plus environment, then set the image registry 
+
+```image-registry.openshift-image-registry.svc:5000```else set defualt from docker registry```docker-registry.default.svc:5000``` 
+ 
+
+
 
 ####  3scale pipeline setup
 
@@ -194,7 +202,7 @@ TARGET_INSTANCE
 DEVELOPER_ACCOUNT_ID                                                        
 DISABLE_TLS_VALIDATION  set "yes" to disable TLS validation.
 ```
-* Read [3scaletoolbox Configuration]( https://github.com/rh-integration/3scale-toolbox-jenkins-samples )
+* Read [3scale-toolbox Configuration]( https://github.com/rh-integration/3scale-toolbox-jenkins-samples ) and  [3scale-toolbox image setup](https://github.com/rh-integration/IntegrationApp-Automation/tree/master/cicd-3scale#setup)
 
 ####  Run pipelines 
 
@@ -202,7 +210,7 @@ After you have set the parameters and imported all of the pipeline templates, yo
 
 ![Pipeline View](images/pipeline_import_view.png "Pipeline View")
 
-Please start the pipeline from `maingateway-service-pipeline`, `fisuser-service-pipeline`, `fisalert-service-pipeline`, `nodejsalert-ui-pipeline` and then `publish-api-3scale` to publish API on 3scale.
+Please start the pipeline from `maingateway-service-pipeline`, `fuse-user-service-pipeline`, `fuse-alert-service-pipeline`, `nodejsalert-ui-pipeline` and then `publish-api-3scale` to publish API on 3scale.
 
 With `aggregated-pipeline`, you can build the entire application including all of the above modules mentioned. If you choose this pipeline, by default, it will build the entire application, but you will also be asked to select which individual module you want to bulid.  You will need to make your selection in your Jenkins console.
 
@@ -230,10 +238,21 @@ oc patch route/nodejsalert-ui -p  '{"spec":{"to":{"name":"nodejsalert-ui-green"}
 oc patch route/nodejsalert-ui -p  '{"spec":{"to":{"name":"nodejsalert-ui"}}}' -n rh-test
 
 ```
-###  Cleanup
 
-delete all projects run below command 
+
+### Decrease Maven Build times (optional)
+
+In order to further speed up the builds time and avoid depndenices to download everytime, please follow the instruction [here](https://blog.openshift.com/decrease-maven-build-times-openshift-pipelines-using-persistent-volume-claim)
+
+
+
+###  Cleaning Up
+
+To clean up all of your environment, you can run the script:
+
 ```sh
  ./setup/delete-setup.sh
  
  ```
+
+

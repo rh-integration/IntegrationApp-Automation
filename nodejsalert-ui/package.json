@@ -15,7 +15,7 @@
     "ci": "npm run lint && npm run coveralls",
     "dependencyCheck": "szero . --ci",
     "release": "standard-version -a",
-    "openshift": "nodeshift --strictSSL=false --dockerImage=registry.access.redhat.com/rhoar-nodejs/nodejs-10",
+    "openshift": "nodeshift --strictSSL=false --dockerImage=registry.redhat.io/rhoar-nodejs/nodejs-10",
     "postinstall": "license-reporter report -s && license-reporter save -s --xml licenses.xml",
     "start": "node ."
   },

@@ -14,10 +14,12 @@ pipeline {
         string (defaultValue: 'rh-prod', name:'PROD_PROJECT', description:'Production project')
         string (defaultValue: 'https://github.com/rh-integration/IntegrationApp-Automation.git', name:'GIT_REPO', description:'Git source')
         string (defaultValue: 'master', name:'GIT_BRANCH', description:'Git branch in the source git')
+        string (defaultValue: 'dbuser', name:'MYSQL_USER', description:'My Sql user name')
+        string (defaultValue: 'password', name:'MYSQL_PWD', description:'My Sql user password')
         booleanParam (defaultValue: false, name:'SELECT_DEPLOY_TO_PROD', description:'Approval to deploy to Production (default: no deployment to production)')
     }
     environment {
-        MODULE_NAME = 'maingateway-service'
+        MODULE_NAME = 'fuse-user-service'
     }
     stages {
         stage ('source') {
@@ -36,56 +38,55 @@ pipeline {
                 build(env.MODULE_NAME)
 
                 echo "Deploying ${MODULE_NAME} to ${DEV_PROJECT}"
-                deploy(env.MODULE_NAME, params.DEV_PROJECT, params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN)
-
+                deploy(env.MODULE_NAME, params.DEV_PROJECT, params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, params.MYSQL_USER, params.MYSQL_PWD)
             }
         }
-        stage('Dev-Env smoke-test') {
+      stage('Dev-Env smoke-test') {
             when {
-                expression {
-                    params.SELECT_DEPLOY_TO_PROD == false
-                }
+              expression {
+                  params.SELECT_DEPLOY_TO_PROD == false
+              }
             }
             steps {
                 script {
+
                     echo "Waiting for deployment to complete prior starting smoke testing"
                     sleep 60
                     retry(5) {
-                        serviceName = 'maingateway-service:8080'
-                        smokeTestOperation = 'cicd/maingateway/profile/11111?alertType=ACCIDENT'
+                        serviceName = 'fuse-user-service:8080'
+                        smokeTestOperation = 'cicd/users/profile/11111'
                         makeGetRequest("http://${serviceName}/${smokeTestOperation}")
                     }
                 }
             }
         }
         stage('Pushing to Test') {
+            when {
+              expression {
+                  params.SELECT_DEPLOY_TO_PROD == false
+              }
+            }
             environment {
                 srcTag = 'latest'
                 destTag = 'promoteTest'
             }
-            when {
-                expression {
-                    params.SELECT_DEPLOY_TO_PROD == false
-                }
-            }
             steps {
                 echo "Deploy ${MODULE_NAME} to ${TEST_PROJECT} "
-                promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, env.MODULE_NAME,params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.TEST_PROJECT)
+                promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, env.MODULE_NAME,params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.TEST_PROJECT, params.MYSQL_USER, params.MYSQL_PWD)
                 promoteService(params.IMAGE_NAMESPACE, params.TEST_PROJECT,env.MODULE_NAME, env.srcTag, env.destTag)
             }
         }
-        stage('Test-Env smoke-test') {
+      stage('Test-Env smoke-test') {
             when {
-                expression {
-                    params.SELECT_DEPLOY_TO_PROD == false
-                }
+              expression {
+                  params.SELECT_DEPLOY_TO_PROD == false
+              }
             }
             steps {
                 script {
                     retry(5) {
-                        sh "oc project ${TEST_PROJECT}"
-                        serviceName = 'maingateway-service:8080'
-                        smokeTestOperation = 'cicd/maingateway/profile/11111?alertType=ACCIDENT'
+                        serviceName = 'fuse-user-service:8080'
+                        smokeTestOperation = 'cicd/users/profile/11111'
                         makeGetRequest("http://${serviceName}/${smokeTestOperation}")
                     }
                 }
@@ -107,6 +108,7 @@ pipeline {
                     } catch (exception) {
                       env.userProdApproval='---'
                     }
+
                     println("User approval to production " + env.userProdApproval);
                 }
             }
@@ -123,22 +125,21 @@ pipeline {
             }
             steps {
                 echo "Deploy ${MODULE_NAME} to ${PROD_PROJECT} "
-
-                promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, env.MODULE_NAME,params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.PROD_PROJECT)
+                promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, env.MODULE_NAME,params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.PROD_PROJECT, params.MYSQL_USER, params.MYSQL_PWD)
                 promoteService(params.IMAGE_NAMESPACE, params.PROD_PROJECT, env.MODULE_NAME,  env.srcTag, env.destTag)
             }
         }
-        stage('Prod-Env smoke-test') {
+      stage('Prod-Env smoke-test') {
             when {
-                expression {
+              expression {
                     env.userProdApproval == 'Approved'
-                }
+              }
             }
             steps {
                 script {
                     retry(5) {
-                        serviceName = 'maingateway-service:8080'
-                        smokeTestOperation = 'cicd/maingateway/profile/11111?alertType=ACCIDENT'
+                        serviceName = 'fuse-user-service:8080'
+                        smokeTestOperation = 'cicd/users/profile/11111'
                         makeGetRequest("http://${serviceName}/${smokeTestOperation}")
                     }
                 }
@@ -147,7 +148,7 @@ pipeline {
     }
 }
 
-def promoteServiceSetup(openShiftHost, openShiftToken, svcName, registry, imageNameSpace, tagName, projName) {
+def promoteServiceSetup(openShiftHost, openShiftToken, svcName, registry, imageNameSpace, tagName, projName, mysqlUser, mysqlPwd) {
     try {
         sh """
             oc delete dc ${svcName} -n ${projName} 2> /dev/null
@@ -160,7 +161,10 @@ def promoteServiceSetup(openShiftHost, openShiftToken, svcName, registry, imageN
             oc create dc ${svcName} --image=${registry}/${imageNameSpace}/${svcName}:${tagName} -n ${projName} 2> /dev/null 
             oc rollout pause dc ${svcName} -n ${projName}  2> /dev/null
             oc patch dc ${svcName} -p '{"spec": {"template": {"spec": {"containers": [{"name": "default-container","imagePullPolicy": "Always"}]}}}}' -n ${projName} 2> /dev/null
-            oc set env dc ${svcName} APP_NAME=${svcName} -n ${projName} 2> /dev/null
+            oc set env dc ${svcName} MYSQL_SERVICE_NAME=mysql -n ${projName} 2> /dev/null
+            oc set env dc ${svcName} MYSQL_SERVICE_USERNAME=${mysqlUser} -n ${projName} 2> /dev/null
+            oc set env dc ${svcName} MYSQL_SERVICE_PASSWORD=${mysqlPwd} -n ${projName} 2> /dev/null
+            oc set env dc ${svcName} JAVA_APP_DIR=/deployments -n ${projName} 2> /dev/null
             oc rollout resume dc ${svcName} -n ${projName}  2> /dev/null
             oc expose dc ${svcName} --type=ClusterIP  --port=8080 --protocol=TCP --target-port=8080 -n ${projName}  2> /dev/null
             oc expose svc ${svcName} --name=${svcName} -n ${projName}  2> /dev/null
@@ -170,7 +174,7 @@ def promoteServiceSetup(openShiftHost, openShiftToken, svcName, registry, imageN
     }
 }
 def promoteService (imageNamespace, projName, svcName, sourceTag, destinationTag) {
-     script {
+    script {
          openshift.withCluster() {
              openshift.withProject( imageNamespace ) {
                  echo "tagging the build for ${projName} ${sourceTag} to ${destinationTag} in ${imageNamespace} "
@@ -196,21 +200,19 @@ def build(folderName) {
     """
 
 }
-def deploy(folderName, projName, openShiftHost, openShiftToken) {
+def deploy(folderName, projName, openShiftHost, openShiftToken, mysqlUser, mysqlPwd) {
     sh """
     cd ${folderName}
 
     oc project ${projName}
 
-    mvn fabric8:deploy -Dmaven.test.skip=true
+    mvn fabric8:deploy -Dmaven.test.skip=true -Dmysql-service-username=${mysqlUser} -Dmysql-service-password=${mysqlPwd}
     """
 }
 
-
 def makeGetRequest(url) {
-
     sh"""set -e +x
-      curl -k -f -w "SmokeTest: %{http_code}\n" -o /dev/null -s ${url}
+                          curl -k -f -w "SmokeTest: %{http_code}\n" -o /dev/null -s ${url}
     """
 
 }

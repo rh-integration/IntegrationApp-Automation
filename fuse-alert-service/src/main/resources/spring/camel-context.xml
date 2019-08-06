@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd        http://camel.apache.org/schema/spring       http://camel.apache.org/schema/spring/camel-spring.xsd">
+    <bean class="org.redhat.alertservice.MailProcessor"
+        id="mailProcessor" scope="singleton"/>
+    <bean
+        class="org.apache.camel.component.servlet.CamelHttpTransportServlet"
+        id="camelHttpTransportServlet" scope="singleton"/>
+    <bean
+        class="org.springframework.boot.web.servlet.ServletRegistrationBean"
+        id="servlet" scope="singleton">
+        <property name="name" value="CamelServlet"/>
+        <property name="servlet" ref="camelHttpTransportServlet"/>
+        <property name="urlMappings" value="/cicd/*"/>
+    </bean>
+    <camelContext id="context1" xmlns="http://camel.apache.org/schema/spring">
+        <onException>
+            <exception>java.lang.Exception</exception>
+            <handled>
+                <constant>true</constant>
+            </handled>
+            <setHeader headerName="Exchange.HTTP_RESPONSE_CODE">
+                <constant>500</constant>
+            </setHeader>
+            <setBody>
+                <simple>${exception.message}</simple>
+            </setBody>
+        </onException>
+        <restConfiguration apiContextPath="/openapi.json" component="servlet"/>
+        <rest enableCORS="true" id="rest1" path="/">
+            <get id="openapi.json" produces="application/json" uri="fuse-alert-service.json">
+                <description>Gets the openapi document for this service</description>
+                <route id="rest1-route1">
+                    <setHeader headerName="Exchange.CONTENT_TYPE" id="setHeader-route1">
+                        <constant>application/vnd.oai.openapi+json</constant>
+                    </setHeader>
+                    <setBody id="setBody-route1">
+                        <simple>resource:classpath:fuse-alert-service.json</simple>
+                    </setBody>
+                </route>
+            </get>
+        </rest>
+ 
+        <rest bindingMode="json" enableCORS="true" id="rest-137a1c4f-a95b-4701-9550-5c4c829b6931" path="/">
+            <post id="149fa303-f173-46b5-8c95-e83adb43008a"
+                type="org.redhat.alertservice.UserInfo" uri="alerts">
+                <to uri="direct:alert"/>
+            </post>
+        </rest>
+        <route id="_Alert Service">
+            <from id="report" uri="direct:alert"/>
+            <log id="log-body" message="${body}"/>
+            <to id="_to1" uri="amq:topic:alert?exchangePattern=InOnly"/>
+            <process id="_Email Alert" ref="mailProcessor"/>
+        </route>
+     </camelContext>
+</beans>

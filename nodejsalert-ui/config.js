@@ -10,7 +10,7 @@ development: {
     },
     //3scale details
     threescale: {
-         url: 'http://3scalefuse-staging.app.middleware.ocp.cloud.lab.eng.bos.redhat.com',
+         url: 'https://rh-test-3scalefuse-1.app.middleware.ocp.cloud.lab.eng.bos.redhat.com',
          token: 'c8515bb07dd5694f5b457306b402b53a'
     }
 },
@@ -27,8 +27,8 @@ production: {
 
     //3scale details
     threescale: {
-        url: 'http://3scalefuse-staging.app.middleware.ocp.cloud.lab.eng.bos.redhat.com',
-        token: 'c8515bb07dd5694f5b457306b402b53a'
+        url: 'https://rh-test-3scalefuse-1.app.middleware.ocp.cloud.lab.eng.bos.redhat.com',
+        token: '8d94e11870361bbfe81dd2c692c829ca6a2c09ac'
     }
 
 }

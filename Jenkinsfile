@@ -40,7 +40,7 @@ pipeline {
                     try {
                         timeout(time: 180, unit: 'SECONDS') {
                             env.userSelModule = input(id: 'userInput', message: 'Please select which module to bulid?',
-                                    parameters: [[$class: 'ChoiceParameterDefinition', defaultValue: 'strDef',
+                                    parameters: [[$class     : 'ChoiceParameterDefinition', defaultValue: 'strDef',
                                                   description: 'describing choices', name: 'nameChoice', choices: "Gateway\nFisUser\nFisAlert\nUI\nAll"]
                                     ])
                         }
@@ -77,9 +77,9 @@ pipeline {
 
             }
         }
-        stage('Build fisuser-service') {
+        stage('Build fuse-user-service') {
             environment {
-                serviceName = 'fisuser-service'
+                serviceName = 'fuse-user-service'
             }
             when {
                 expression {
@@ -95,9 +95,9 @@ pipeline {
                 deploy(env.serviceName, params.DEV_PROJECT, params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, params.MYSQL_USER, params.MYSQL_PWD)
             }
         }
-        stage('Build fisalert-service') {
+        stage('Build fuse-alert-service') {
             environment {
-                serviceName = 'fisalert-service'
+                serviceName = 'fuse-alert-service'
             }
             when {
                 expression {
@@ -126,19 +126,55 @@ pipeline {
             }
             steps {
                 echo "Building.. ${serviceName}"
-                node('nodejs') {
-                    git url: params.GIT_REPO, branch: params.GIT_BRANCH
 
-                    script {
-                        sh """
-                        cd ${serviceName}
+                git url: params.GIT_REPO, branch: params.GIT_BRANCH
+                script {
 
-                        oc project ${DEV_PROJECT}
 
-                        npm install && npm run openshift
-                        """
+                    def templatePath = 'nodejsalert-ui/resources/nodejs.json'
+                    openshift.withCluster() {
+                        openshift.withProject() {
+
+                            echo "delete everything created with template ..."
+                            if (openshift.selector('dc', serviceName).exists()) {
+                                openshift.selector('dc', serviceName).delete()
+                                openshift.selector('svc', serviceName).delete()
+                                openshift.selector('route', serviceName).delete()
+                                openshift.selector('is', serviceName).delete()
+
+                            }
+                            if (openshift.selector("bc", serviceName).exists()) {
+                                openshift.selector('bc', serviceName).delete()
+                            }
+
+                            if (openshift.selector("secrets", serviceName).exists()) {
+                                openshift.selector("secrets", serviceName).delete()
+                            }
+
+                            echo "create a new application from the templatePath..."
+                            openshift.newApp(templatePath)
+
+                            echo "start Build  ..."
+                            def builds = openshift.selector("bc", env.serviceName).related('builds')
+                            builds.logs('-f')
+                            builds.watch {
+                                echo " ${builds.name()} has created builds: ${it.names()}"
+                                return it.count() > 0
+                            }
+                            builds.untilEach(1) {
+                                return (it.object().status.phase == "Complete")
+                            }
+
+                            echo "start Deployment ..."
+
+                            def rm = openshift.selector("dc", env.serviceName).rollout()
+                            openshift.selector("dc", env.serviceName).related('pods').untilEach(1) {
+                                return (it.object().status.phase == "Running")
+                            }
+                        }
                     }
                 }
+
             }
         }
         stage('Dev-Env smoke-test') {
@@ -153,22 +189,25 @@ pipeline {
                     echo "Waiting for deployment to complete prior starting smoke testing"
                     sleep 120
 
-                    serviceName = 'maingateway-service'
-                    smokeTestOperation = 'cicd/maingateway/profile/11111?alertType=ACCIDENT'
-                    makeGetRequest("http://${serviceName}/${smokeTestOperation}")
+                    retry(5) {
+
+                        serviceName = 'fuse-user-service'
+                        smokeTestOperation = 'cicd/users/profile/11111'
+                        makeGetRequest("http://${serviceName}:8080/${smokeTestOperation}")
+
+                        serviceName = 'fuse-alert-service'
+                        smokeTestOperation = 'cicd/alerts'
+                        body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
+                        makePostRequest("http://${serviceName}:8080/${smokeTestOperation}", body, 'POST')
+
+                        serviceName = 'maingateway-service'
+                        smokeTestOperation = 'cicd/maingateway/profile/11111?alertType=ACCIDENT'
+                        makeGetRequest("http://${serviceName}:8080/${smokeTestOperation}")
 
 
-                    serviceName = 'fisuser-service'
-                    smokeTestOperation = 'cicd/users/profile/11111'
-                    makeGetRequest("http://${serviceName}/${smokeTestOperation}")
-
-                    serviceName = 'fisalert-service'
-                    smokeTestOperation = 'cicd/alerts'
-                    body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
-                    makePostRequest("http://${serviceName}/${smokeTestOperation}", body, 'POST')
-
-                    serviceName = 'nodejsalert-ui'
-                    makeGetRequest("http://${serviceName}:8080")
+                        serviceName = 'nodejsalert-ui'
+                        makeGetRequest("http://${serviceName}:8080")
+                    }
                 }
             }
         }
@@ -204,10 +243,10 @@ pipeline {
             }
             steps {
                 echo "Deploy to ${TEST_PROJECT} "
-                tagImage(params.IMAGE_NAMESPACE, params.TEST_PROJECT, 'fisuser-service', env.srcTag, env.destTag)
-                promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'fisuser-service', params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.TEST_PROJECT)
-                setEnvForDBModule(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'fisuser-service', params.TEST_PROJECT, params.MYSQL_USER, params.MYSQL_PWD)
-                promoteService(params.IMAGE_NAMESPACE, params.TEST_PROJECT, 'fisuser-service', env.srcTag, env.destTag)
+                tagImage(params.IMAGE_NAMESPACE, params.TEST_PROJECT, 'fuse-user-service', env.srcTag, env.destTag)
+                promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'fuse-user-service', params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.TEST_PROJECT)
+                setEnvForDBModule(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'fuse-user-service', params.TEST_PROJECT, params.MYSQL_USER, params.MYSQL_PWD)
+                promoteService(params.IMAGE_NAMESPACE, params.TEST_PROJECT, 'fuse-user-service', env.srcTag, env.destTag)
             }
         }
         stage('Pushing to Test - fisalert') {
@@ -223,9 +262,9 @@ pipeline {
             }
             steps {
                 echo "Deploy to ${TEST_PROJECT} "
-                tagImage(params.IMAGE_NAMESPACE, params.TEST_PROJECT, 'fisalert-service', env.srcTag, env.destTag)
-                promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'fisalert-service', params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.TEST_PROJECT)
-                promoteService(params.IMAGE_NAMESPACE, params.TEST_PROJECT, 'fisalert-service', env.srcTag, env.destTag)
+                tagImage(params.IMAGE_NAMESPACE, params.TEST_PROJECT, 'fuse-alert-service', env.srcTag, env.destTag)
+                promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'fuse-alert-service', params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.TEST_PROJECT)
+                promoteService(params.IMAGE_NAMESPACE, params.TEST_PROJECT, 'fuse-alert-service', env.srcTag, env.destTag)
             }
         }
         stage('Pushing to Test - nodejsalert') {
@@ -259,22 +298,24 @@ pipeline {
                     sleep 60
 
                     sh "oc project ${TEST_PROJECT}"
-                    serviceName = 'maingateway-service'
-                    smokeTestOperation = 'cicd/maingateway/profile/11111?alertType=ACCIDENT'
-                    makeGetRequest("http://${serviceName}/${smokeTestOperation}")
+                    retry(5) {
+                        serviceName = 'fuse-user-service'
+                        smokeTestOperation = 'cicd/users/profile/11111'
+                        makeGetRequest("http://${serviceName}:8080/${smokeTestOperation}")
+
+                        serviceName = 'fuse-alert-service'
+                        smokeTestOperation = 'cicd/alerts'
+                        body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
+                        makePostRequest("http://${serviceName}:8080/${smokeTestOperation}", body, 'POST')
+
+                        serviceName = 'maingateway-service'
+                        smokeTestOperation = 'cicd/maingateway/profile/11111?alertType=ACCIDENT'
+                        makeGetRequest("http://${serviceName}:8080/${smokeTestOperation}")
 
 
-                    serviceName = 'fisuser-service'
-                    smokeTestOperation = 'cicd/users/profile/11111'
-                    makeGetRequest("http://${serviceName}/${smokeTestOperation}")
-
-                    serviceName = 'fisalert-service'
-                    smokeTestOperation = 'cicd/alerts'
-                    body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
-                    makePostRequest("http://${serviceName}/${smokeTestOperation}", body, 'POST')
-
-                    serviceName = 'nodejsalert-ui'
-                    makeGetRequest("http://${serviceName}:8080")
+                        serviceName = 'nodejsalert-ui'
+                        makeGetRequest("http://${serviceName}:8080")
+                    }
                 }
             }
         }
@@ -289,10 +330,10 @@ pipeline {
                 script {
 
                     def envName = params.TEST_PROJECT
-                    def app_name= 'maingateway-service'
+                    def app_name = 'maingateway-service'
                     def backend_service = sh(script: "oc get route ${app_name} -o jsonpath=\'{.spec.host}\' -n ${envName}", returnStdout: true)
                     def targetPort = sh(script: "oc get route ${app_name} -o jsonpath=\'{.spec.port.targetPort}\' -n ${envName}", returnStdout: true)
-                    backend_service=  "http://"+backend_service
+                    backend_service = "http://" + backend_service
                     println "${backend_service} "
 
                     echo "Prepare 3scale Configuration"
@@ -301,8 +342,8 @@ pipeline {
                             environment: [baseSystemName                : params.API_BASE_SYSTEM_NAME,
                                           privateBaseUrl                : backend_service,
                                           privateBasePath               : "/cicd",
-                                          environmentName               :  envName,
-                                          publicStagingWildcardDomain: params.PUBLIC_STAGING_WILDCARD_DOMAIN != "" ? params.PUBLIC_STAGING_WILDCARD_DOMAIN : null,
+                                          environmentName               : envName,
+                                          publicStagingWildcardDomain   : params.PUBLIC_STAGING_WILDCARD_DOMAIN != "" ? params.PUBLIC_STAGING_WILDCARD_DOMAIN : null,
                                           publicProductionWildcardDomain: params.PUBLIC_PRODUCTION_WILDCARD_DOMAIN != "" ? params.PUBLIC_PRODUCTION_WILDCARD_DOMAIN : null
                             ],
                             toolbox: [openshiftProject: params.DEV_PROJECT, destination: params.TARGET_INSTANCE,
@@ -337,10 +378,13 @@ pipeline {
 
                     def proxy = service.readProxy("sandbox")
                     def sandbox_endpoint = proxy.sandbox_endpoint
-
-                    sh """set -e +x
-                          curl -k -f -w "UserAlert: %{http_code}\n" -o /dev/null -s ${sandbox_endpoint}/cicd/maingateway/profile/11111?alertType=ACCIDENT"&api-key=${service.applications[0].userkey}"
+                    retry(5) {
+                        sh """set -e +x
+                          curl -k -f -w "UserAlert: %{http_code}\n" -o /dev/null -s ${
+                            sandbox_endpoint
+                        }/cicd/maingateway/profile/11111?alertType=ACCIDENT"&api-key=${service.applications[0].userkey}"
                         """
+                    }
 
                     echo "Promote to production"
                     service.promoteToProduction()
@@ -399,10 +443,10 @@ pipeline {
             }
             steps {
                 echo "Deploy to ${PROD_PROJECT} "
-                tagImage(params.IMAGE_NAMESPACE, params.PROD_PROJECT, 'fisuser-service', env.srcTag, env.destTag)
-                promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'fisuser-service', params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.PROD_PROJECT)
-                setEnvForDBModule(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'fisuser-service', params.PROD_PROJECT, params.MYSQL_USER, params.MYSQL_PWD)
-                promoteService(params.IMAGE_NAMESPACE, params.PROD_PROJECT, 'fisuser-service', env.srcTag, env.destTag)
+                tagImage(params.IMAGE_NAMESPACE, params.PROD_PROJECT, 'fuse-user-service', env.srcTag, env.destTag)
+                promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'fuse-user-service', params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.PROD_PROJECT)
+                setEnvForDBModule(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'fuse-user-service', params.PROD_PROJECT, params.MYSQL_USER, params.MYSQL_PWD)
+                promoteService(params.IMAGE_NAMESPACE, params.PROD_PROJECT, 'fuse-user-service', env.srcTag, env.destTag)
             }
         }
         stage('Pushing to Prod - fisalert') {
@@ -417,9 +461,9 @@ pipeline {
             }
             steps {
                 echo "Deploy to ${PROD_PROJECT} "
-                tagImage(params.IMAGE_NAMESPACE, params.PROD_PROJECT, 'fisalert-service', env.srcTag, env.destTag)
-                promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'fisalert-service', params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.PROD_PROJECT)
-                promoteService(params.IMAGE_NAMESPACE, params.PROD_PROJECT, 'fisalert-service', env.srcTag, env.destTag)
+                tagImage(params.IMAGE_NAMESPACE, params.PROD_PROJECT, 'fuse-alert-service', env.srcTag, env.destTag)
+                promoteServiceSetup(params.OPENSHIFT_HOST, params.OPENSHIFT_TOKEN, 'fuse-alert-service', params.IMAGE_REGISTRY, params.IMAGE_NAMESPACE, env.destTag, params.PROD_PROJECT)
+                promoteService(params.IMAGE_NAMESPACE, params.PROD_PROJECT, 'fuse-alert-service', env.srcTag, env.destTag)
             }
         }
         stage('Pushing to Prod - nodejsalert') {
@@ -449,25 +493,28 @@ pipeline {
             steps {
                 script {
                     echo "Waiting for deployment to complete prior starting smoke testing"
-                    sleep 60
+                    sleep 80
 
                     sh "oc project ${PROD_PROJECT}"
-                    serviceName = 'maingateway-service'
-                    smokeTestOperation = 'cicd/maingateway/profile/11111?alertType=ACCIDENT'
-                    makeGetRequest("http://${serviceName}/${smokeTestOperation}")
+                    retry(5) {
+                        serviceName = 'fuse-user-service'
+                        smokeTestOperation = 'cicd/users/profile/11111'
+                        makeGetRequest("http://${serviceName}:8080/${smokeTestOperation}")
+
+                        serviceName = 'fuse-alert-service'
+                        smokeTestOperation = 'cicd/alerts'
+                        body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
+                        makePostRequest("http://${serviceName}:8080/${smokeTestOperation}", body, 'POST')
 
 
-                    serviceName = 'fisuser-service'
-                    smokeTestOperation = 'cicd/users/profile/11111'
-                    makeGetRequest("http://${serviceName}/${smokeTestOperation}")
+                        serviceName = 'maingateway-service'
+                        smokeTestOperation = 'cicd/maingateway/profile/11111?alertType=ACCIDENT'
+                        makeGetRequest("http://${serviceName}:8080/${smokeTestOperation}")
 
-                    serviceName = 'fisalert-service'
-                    smokeTestOperation = 'cicd/alerts'
-                    body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
-                    makePostRequest("http://${serviceName}/${smokeTestOperation}", body, 'POST')
 
-                    serviceName = 'nodejsalert-ui'
-                    makeGetRequest("http://${serviceName}:8080")
+                        serviceName = 'nodejsalert-ui'
+                        makeGetRequest("http://${serviceName}:8080")
+                    }
                 }
             }
         }
@@ -483,10 +530,10 @@ pipeline {
 
 
                     def envName = params.PROD_PROJECT
-                    def app_name= 'maingateway-service'
+                    def app_name = 'maingateway-service'
                     def backend_service = sh(script: "oc get route ${app_name} -o jsonpath=\'{.spec.host}\' -n ${envName}", returnStdout: true)
                     def targetPort = sh(script: "oc get route ${app_name} -o jsonpath=\'{.spec.port.targetPort}\' -n ${envName}", returnStdout: true)
-                    backend_service=  "http://"+backend_service
+                    backend_service = "http://" + backend_service
                     println "${backend_service} "
 
                     echo "Prepare 3scale Configuration"
@@ -496,7 +543,7 @@ pipeline {
                                           privateBaseUrl                : backend_service,
                                           privateBasePath               : "/cicd",
                                           environmentName               : envName,
-                                          publicStagingWildcardDomain: params.PUBLIC_STAGING_WILDCARD_DOMAIN != "" ? params.PUBLIC_STAGING_WILDCARD_DOMAIN : null,
+                                          publicStagingWildcardDomain   : params.PUBLIC_STAGING_WILDCARD_DOMAIN != "" ? params.PUBLIC_STAGING_WILDCARD_DOMAIN : null,
                                           publicProductionWildcardDomain: params.PUBLIC_PRODUCTION_WILDCARD_DOMAIN != "" ? params.PUBLIC_PRODUCTION_WILDCARD_DOMAIN : null
                             ],
                             toolbox: [openshiftProject: params.DEV_PROJECT, destination: params.TARGET_INSTANCE,
@@ -532,10 +579,14 @@ pipeline {
                     def proxy = service.readProxy("sandbox")
                     def sandbox_endpoint = proxy.sandbox_endpoint
 
-                    sh """set -e +x
-                          curl -k -f -w "UserAlert: %{http_code}\n" -o /dev/null -s ${ sandbox_endpoint}/cicd/maingateway/profile/11111?alertType=ACCIDENT"&api-key=${service.applications[0].userkey}"
-                        """
+                    retry(5) {
 
+                        sh """set -e +x
+                          curl -k -f -w "UserAlert: %{http_code}\n" -o /dev/null -s ${
+                            sandbox_endpoint
+                        }/cicd/maingateway/profile/11111?alertType=ACCIDENT"&api-key=${service.applications[0].userkey}"
+                        """
+                    }
                     echo "Promote to production"
                     service.promoteToProduction()
 
@@ -580,7 +631,7 @@ def promoteServiceSetup(openShiftHost, openShiftToken, svcName, registry, imageN
         } 2> /dev/null
             oc set env dc ${svcName} APP_NAME=${svcName} -n ${projName} 2> /dev/null 
             oc rollout resume dc ${svcName} -n ${projName} 2> /dev/null 
-            oc expose dc ${svcName} --type=ClusterIP  --port=80 --protocol=TCP --target-port=8080 -n ${projName} 2> /dev/null
+            oc expose dc ${svcName} --type=ClusterIP  --port=8080 --protocol=TCP --target-port=8080 -n ${projName} 2> /dev/null
             oc expose svc ${svcName} --name=${svcName} -n ${projName} 2> /dev/null 
         """
     } catch (Exception e) {
@@ -634,7 +685,7 @@ def deploy(folderName, projName, openShiftHost, openShiftToken, mysqlUser, mysql
 
 def makePostRequest(url, body, method) {
 
-    sh"""set -e +x
+    sh """set -e +x
 
     curl -X POST   ${url} \
     -H 'cache-control: no-cache' \
@@ -649,7 +700,7 @@ def makePostRequest(url, body, method) {
 def makeGetRequest(url) {
 
 
-    sh"""set -e +x
+    sh """set -e +x
                           curl -k -f -w "SmokeTest: %{http_code}\n" -o /dev/null -s ${url}
     """
 }
