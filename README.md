@@ -133,7 +133,7 @@ oc project rh-dev
 
 ```
 
-#### Remove the exisiting pipeline that you want to customize.
+#### Remove the existing pipeline that you want to customize.
 
 ```sh
 
@@ -179,7 +179,7 @@ if you're using openshift 4 plus environment, then set the image registry
 
 ####  3scale pipeline setup
 
-Before running Pipelines, listed 3scale configurtation required to set.
+Before running Pipelines, listed 3scale configuration required to set.
 
 
 * Create the routes for your APIcast gateways in 3scale Project if required with below command
@@ -212,9 +212,9 @@ After you have set the parameters and imported all of the pipeline templates, yo
 
 Please start the pipeline from `maingateway-service-pipeline`, `fuse-user-service-pipeline`, `fuse-alert-service-pipeline`, `nodejsalert-ui-pipeline` and then `publish-api-3scale` to publish API on 3scale.
 
-With `aggregated-pipeline`, you can build the entire application including all of the above modules mentioned. If you choose this pipeline, by default, it will build the entire application, but you will also be asked to select which individual module you want to bulid.  You will need to make your selection in your Jenkins console.
+With `aggregated-pipeline`, you can build the entire application including all of the above modules mentioned. If you choose this pipeline, by default, it will build the entire application, but you will also be asked to select which individual module you want to build.  You will need to make your selection in your Jenkins console.
 
-Once the build is finished, in your OpenShift, go to `rh-test` or `rh-prod`, nevigate to `Applications`, `Routes` and click on maingateway-service and nodejsalert-ui route to launch the application.
+Once the build is finished, in your OpenShift, go to `rh-test` or `rh-prod`, navigate to `Applications`, `Routes` and click on maingateway-service and nodejsalert-ui route to launch the application.
 You should see the application and it is started with web front-end like this, add 3scale user key and 3scale gatway url and click sendAlert button: 
 
 ![Application View](images/application_launch_view.png "Application View")
