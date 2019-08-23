@@ -97,7 +97,7 @@ You can then access the REST API directly from your Web browser, e.g.:
  ```
 view the API Doc       
    
-    curl http://localhost:8080/cicd/openapi-spec.json 
+    curl http://localhost:8080/cicd/openapi.json
        
 ### Implementation 
         

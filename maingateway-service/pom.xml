@@ -11,31 +11,22 @@
 	<description>Fuse Integration Service - main gateway Service</description>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
-		<!-- configure the versions you want to use here -->
-		<fuse.version>7.3.0.fuse-730058-redhat-00001</fuse.version>
-		<fabric8.version>3.0.11.fuse-730075-redhat-00001</fabric8.version>
-		<spring-boot.version>1.5.17.RELEASE</spring-boot.version>
-
-		<!-- maven plugin versions -->
-		<fabric8.maven.plugin.version>4.1.0</fabric8.maven.plugin.version>
-		<maven-compiler-plugin.version>3.3</maven-compiler-plugin.version>
-		<maven-surefire-plugin.version>2.18.1</maven-surefire-plugin.version>
+		<fuse.version>7.4.0.fuse-740036-redhat-00002</fuse.version>
+		<!-- Maven plugin versions -->
+		<maven-compiler-plugin.version>3.6.0</maven-compiler-plugin.version>
+		<maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
 	</properties>
-
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
-				<groupId>io.fabric8</groupId>
-				<artifactId>fabric8-project-bom-camel-spring-boot</artifactId>
-				<version>${fabric8.version}</version>
+				<groupId>org.jboss.redhat-fuse</groupId>
+				<artifactId>fuse-springboot-bom</artifactId>
+				<version>${fuse.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
-
-
 	<dependencies>
 		<dependency>
 			<groupId>org.apache.camel</groupId>
@@ -44,6 +35,16 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-starter-tomcat</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-undertow</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -90,7 +91,6 @@
 			<artifactId>httpclient</artifactId>
 			<scope>test</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jboss.arquillian.junit</groupId>
 			<artifactId>arquillian-junit-container</artifactId>
@@ -104,7 +104,7 @@
 	</dependencies>
 	<build>
 		<defaultGoal>spring-boot:run</defaultGoal>
-		<plugins>
+			<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>${maven-compiler-plugin.version}</version>
@@ -114,8 +114,9 @@
 				</configuration>
 			</plugin>
 			<plugin>
-				<groupId>org.springframework.boot</groupId>
+				<groupId>org.jboss.redhat-fuse</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<version>${fuse.version}</version>
 				<executions>
 					<execution>
 						<goals>
@@ -125,9 +126,9 @@
 				</executions>
 			</plugin>
 			<plugin>
-				<groupId>io.fabric8</groupId>
+				<groupId>org.jboss.redhat-fuse</groupId>
 				<artifactId>fabric8-maven-plugin</artifactId>
-				<version>${fabric8.maven.plugin.version}</version>
+				<version>${fuse.version}</version>
 				<executions>
 					<execution>
 						<goals>
@@ -139,7 +140,6 @@
 			</plugin>
 		</plugins>
 	</build>
-
 	<repositories>
 		<repository>
 			<id>maven.central</id>
@@ -178,7 +178,6 @@
 			</snapshots>
 		</repository>
 	</repositories>
-
 	<pluginRepositories>
 		<pluginRepository>
 			<id>maven.central</id>
@@ -217,5 +216,4 @@
 			</snapshots>
 		</pluginRepository>
 	</pluginRepositories>
-
 </project>

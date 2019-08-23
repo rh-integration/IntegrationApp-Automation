@@ -15,20 +15,39 @@
  */
 package org.redhat.alertservice;
 
+import org.apache.camel.component.amqp.AMQPConnectionDetails;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ImportResource;
+import org.springframework.beans.factory.annotation.Value;
 
 /**
  * A spring-boot application that includes a Camel route builder to setup the Camel routes
  */
 @SpringBootApplication
-@ImportResource({ "classpath:spring/amq.xml","classpath:spring/camel-context.xml"})
+@ImportResource({ "classpath:spring/camel-context.xml"})
 public class Application {
+	
+	@Value("${activemq.broker.url}")
+	private String AMQ_BROKER_URL;
+	
+	@Value("${activemq.broker.username}")
+	private String AMQ_BROKER_USERNAME;
+	
+	@Value("${activemq.broker.password}")
+	private String AMQ_BROKER_PASSWORD;
 
     // must have a main method spring-boot can run
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
     }
+    
+    
+    @Bean
+	AMQPConnectionDetails amqpConnection() {
+		return new AMQPConnectionDetails(AMQ_BROKER_URL, AMQ_BROKER_USERNAME, AMQ_BROKER_PASSWORD);
+	}
+
 
 }

@@ -35,14 +35,14 @@ activemq:
 # The following properties can be customized using the 'ACTIVEMQ_SERVICE_HOST' and 'ACTIVEMQ_SERVICE_PORT' environment variables.
 # This is indeed done automatically by Kubernetes when the application is deployed in a namespace containing an instance of ActiveMQ named 'activemq'.
 # The service defaults to localhost. You need to change these properties for development purposes only.
-    host: broker-amq-tcp
-    port: 61616
+    host: broker-amq-amqp
+    port: 5672
   broker: 
     username: admin
     password: admin
     
 # The following property binds all previous configurations together
-    url: tcp://${${activemq.service.name}.service.host}:${${activemq.service.name}.service.port}
+    url: amqp://${${activemq.service.name}.service.host}:${${activemq.service.name}.service.port}
   concurrent: 
     consumers: 10
   pool: 

@@ -22,7 +22,7 @@
     <camelContext id="context1" xmlns="http://camel.apache.org/schema/spring">
         <restConfiguration apiContextPath="/openapi.json" component="servlet"/>
         <rest enableCORS="true" id="rest1" path="/">
-            <get id="openapi.json" produces="application/json" uri="openapi-spec.json">
+            <get id="openapi.json" produces="application/json" uri="openapi.json">
                 <description>Gets the openapi document for this service</description>
                 <route id="rest1-route1">
                     <setHeader headerName="Exchange.CONTENT_TYPE" id="setHeader-route1">
@@ -53,11 +53,9 @@
             <hystrix id="_hystrix5">
                 <hystrixConfiguration
                     circuitBreakerSleepWindowInMilliseconds="10000" executionTimeoutInMilliseconds="5000"/>
-                <recipientList id="_userservice"  >
-                    <!--                     <simple>http://fuse-user-service-cicddemo.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com/cicd/user/profile/${header.acctid}?bridgeEndpoint=true</simple> -->
+                <recipientList id="_userservice">
                     <simple>http://fuse-user-service:8080/cicd/users/profile/${header.id}?bridgeEndpoint=true</simple>
                 </recipientList>
-                <convertBodyTo id="_convertBodyTo1" type="java.lang.String"/>
                 <unmarshal id="_unmarshal1">
                     <json library="Jackson"/>
                 </unmarshal>
@@ -67,11 +65,9 @@
                 <setHeader headerName="CamelHttpMethod" id="_setHeader3">
                     <constant>POST</constant>
                 </setHeader>
-                <recipientList id="_alertservice"   >
-                    <!--                     <simple>http://fuse-alert-service-cicddemo.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com/cicd/alert?bridgeEndpoint=true</simple> -->
+                <recipientList id="_alertservice">
                     <simple>http://fuse-alert-service:8080/cicd/alerts?bridgeEndpoint=true</simple>
                 </recipientList>
-                <convertBodyTo id="_convertBodyTo2" type="java.lang.String"/>
                 <unmarshal id="_unmarshal2">
                     <json library="Jackson"/>
                 </unmarshal>

@@ -76,17 +76,17 @@ parameters:
   value: master
   required: true
 - name: PRIVATE_BASE_URL
-  value: http://maingateway-service-rh-test.app.middleware.ocp.cloud.lab.eng.bos.redhat.com
-  required: true
+  value:
+  #required: true
 - name: PUBLIC_PRODUCTION_WILDCARD_DOMAIN
-  value: app.middleware.ocp.cloud.lab.eng.bos.redhat.com
+  value:
 - name: PUBLIC_STAGING_WILDCARD_DOMAIN
-  value: staging.app.middleware.ocp.cloud.lab.eng.bos.redhat.com
+  value:
 - name: PRODUCTION_PUBLIC_BASE_URL
-  value: https://3scalefuse.app.middleware.ocp.cloud.lab.eng.bos.redhat.com
+  value:
   #required: true
 - name: STAGING_PUBLIC_BASE_URL
-  value: https://3scalefuse-staging.app.middleware.ocp.cloud.lab.eng.bos.redhat.com
+  value:
   #required: true
 - name: API_BASE_SYSTEM_NAME
   value: 3scalefuse

@@ -28,7 +28,7 @@
         </onException>
         <restConfiguration apiContextPath="/openapi.json" component="servlet"/>
         <rest enableCORS="true" id="rest1" path="/">
-            <get id="openapi.json" produces="application/json" uri="fuse-alert-service.json">
+            <get id="openapi.json" produces="application/json" uri="openapi.json">
                 <description>Gets the openapi document for this service</description>
                 <route id="rest1-route1">
                     <setHeader headerName="Exchange.CONTENT_TYPE" id="setHeader-route1">
@@ -40,8 +40,8 @@
                 </route>
             </get>
         </rest>
- 
-        <rest bindingMode="json" enableCORS="true" id="rest-137a1c4f-a95b-4701-9550-5c4c829b6931" path="/">
+        <rest bindingMode="json" enableCORS="true"
+            id="rest-137a1c4f-a95b-4701-9550-5c4c829b6931" path="/">
             <post id="149fa303-f173-46b5-8c95-e83adb43008a"
                 type="org.redhat.alertservice.UserInfo" uri="alerts">
                 <to uri="direct:alert"/>
@@ -50,8 +50,8 @@
         <route id="_Alert Service">
             <from id="report" uri="direct:alert"/>
             <log id="log-body" message="${body}"/>
-            <to id="_to1" uri="amq:topic:alert?exchangePattern=InOnly"/>
+            <to id="_to1" uri="amqp:topic:alert?exchangePattern=InOnly"/>
             <process id="_Email Alert" ref="mailProcessor"/>
         </route>
-     </camelContext>
+    </camelContext>
 </beans>

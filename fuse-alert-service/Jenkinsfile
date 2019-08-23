@@ -54,7 +54,7 @@ pipeline {
                     retry(5) {
                         serviceName = 'fuse-alert-service:8080'
                         smokeTestOperation = 'cicd/alerts'
-                        body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
+                        body = ''' { "alertType": "ACCIDENT",  "firstName": "user1",  "date": "11/8/2019",  "phone": "78135955",  "email": "user1@abc.com",  "description": "test"} '''
                         makePostRequest("http://${serviceName}/${smokeTestOperation}", body, 'POST')
                     }
                 }
@@ -87,7 +87,7 @@ pipeline {
                     retry(5) {
                         serviceName = 'fuse-alert-service:8080'
                         smokeTestOperation = 'cicd/alerts'
-                        body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
+                        body = ''' { "alertType": "ACCIDENT",  "firstName": "user1",  "date": "11/8/2019",  "phone": "78135955",  "email": "user1@abc.com",  "description": "test"} '''
                         makePostRequest("http://${serviceName}/${smokeTestOperation}", body, 'POST')
                     }
                 }
@@ -144,7 +144,7 @@ pipeline {
                     retry(5) {
                         serviceName = 'fuse-alert-service:8080'
                         smokeTestOperation = 'cicd/alerts'
-                        body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
+                        body = ''' { "alertType": "ACCIDENT",  "firstName": "user1",  "date": "11/8/2019",  "phone": "78135955",  "email": "user1@abc.com",  "description": "test"} '''
                         makePostRequest("http://${serviceName}/${smokeTestOperation}", body, 'POST')
                     }
                 }
