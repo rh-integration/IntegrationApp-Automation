@@ -88,7 +88,7 @@ view the API Doc
    
    - <http://localhost:8080/cicd/fuse-alert-service.json>    
     
-### Implemention
+### Implementation
 
 
 This service sends an email alert and exposes an API endpoints, by receiving input as JSON. This content is later sent to a messaging broker, and then picked up by a bean, which simply processes email parameters and returns a result of the email status.
@@ -96,7 +96,7 @@ This service sends an email alert and exposes an API endpoints, by receiving inp
 
   ![alt text](../images/Service2.png "Fuse Service 2")
 
-Email Conifg:
+Email Config:
 
  - Update src/main/resources/application.yml with email server configuration.
  - Insert your email credentials, we are using GMAIL as example.
@@ -105,7 +105,7 @@ Email Conifg:
 
 It is assumed that:
 - OpenShift platform is already running, if not you can find details how to [Install OpenShift at your site](https://docs.openshift.com/container-platform/3.3/install_config/index.html).
-- Your system is configured for Fabric8 Maven Workflow, if not you can find a [Get Started Guide](https://access.redhat.com/documentation/en/red-hat-jboss-middleware-for-openshift/3/single/red-hat-jboss-fuse-integration-services-20-for-openshift/)
+- Your system is configured for Fabric8 Maven Workflow, if not you can find a [Get Started Guide](https://access.redhat.com/documentation/en/red-hat-xpaas/0/single/red-hat-jboss-fuse-integration-services-20-for-openshift)
 
 The example can be built and run on OpenShift using a single goal:
 

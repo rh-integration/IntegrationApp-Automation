@@ -48,7 +48,7 @@ Go to [studio.apicur.io](https://studio.apicur.io/), login and import the openap
 	
 	```sh
 	
-   3scale remote add $NAME https://$TOKEN@$TENANT.3scale.net/
+   3scale remote add instance_a https://$TOKEN@$TENANT.3scale.net/
 		
 	```
 3. Create the Secret in openshift project.

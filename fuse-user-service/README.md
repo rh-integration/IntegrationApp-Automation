@@ -65,7 +65,6 @@ add a beans.xml file by right-clicking the folder and selecting New->beans.xml F
 Insert the following code snippet to the beans.xml file:
 
 ```xml
-
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
  xmlns:util="http://www.springframework.org/schema/util"
@@ -87,19 +86,18 @@ Insert the following code snippet to the beans.xml file:
 
 </util:map>
 </beans>
+```
 
-  ```
 Add the Camel routes to the camel-context.xml file.
 
 ```xml
-
         <route id="user profile route">
             <from id="_from1" uri="direct:getProfile"/>
             <log id="_log1" message="Profile ${headers.id}"/>
              <to uri="bean:UserProfileList?method=get(0)"/>
             <log id="_log2" message="output: ${body}"/>
         </route>
-  ```
+```
 
         
 
@@ -134,7 +132,7 @@ You can then access the REST API directly from your Web browser, e.g.:
   
    - Getting the API docs:
      
-     curl http://localhost:8080/cicd/userservice-spec.json 
+     curl http://localhost:8080/cicd/userservice-spec.json
     
 ### Implementation 
         

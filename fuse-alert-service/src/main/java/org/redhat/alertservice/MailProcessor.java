@@ -53,7 +53,7 @@ public class MailProcessor implements Processor {
 			InternetAddress[] address = InternetAddress.parse(userInfo.getEmail(), true);
 			msg.setRecipients(Message.RecipientType.TO, address);
 			String timeStamp = new SimpleDateFormat(DATE_FORMAT).format(new Date());
-			msg.setSubject(userInfo.getAlertType() + " Alert Notifcation : " + timeStamp);
+			msg.setSubject(userInfo.getAlertType() + " Alert Notification : " + timeStamp);
 			msg.setSentDate(new Date());
 			msg.setText(messageBody);
 			msg.setHeader("XPriority", "1");
