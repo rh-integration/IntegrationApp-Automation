@@ -32,7 +32,7 @@ securityDefinitions:
         in: query
 security:
     - apikey: []
-host: maingateway-service-rh-test.app.middleware.ocp.cloud.lab.eng.bos.redhat.com
+host: echo-api.3scale.net
 basePath: /cicd
 schemes:
     - http

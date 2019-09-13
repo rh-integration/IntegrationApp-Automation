@@ -210,7 +210,7 @@ After you have set the parameters and imported all of the pipeline templates, yo
 
 ![Pipeline View](images/pipeline_import_view.png "Pipeline View")
 
-Please start the pipeline from `maingateway-service-pipeline`, `fuse-user-service-pipeline`, `fuse-alert-service-pipeline`, `nodejsalert-ui-pipeline` and then `publish-api-3scale` to publish API on 3scale.
+Please start the pipeline from `fuse-user-service-pipeline`, `fuse-alert-service-pipeline`, `maingateway-service-pipeline` ,`nodejsalert-ui-pipeline` and then `publish-api-3scale` to publish API on 3scale.
 
 With `aggregated-pipeline`, you can build the entire application including all of the above modules mentioned. If you choose this pipeline, by default, it will build the entire application, but you will also be asked to select which individual module you want to build.  You will need to make your selection in your Jenkins console.
 

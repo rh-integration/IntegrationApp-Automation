@@ -132,7 +132,7 @@ You can then access the REST API directly from your Web browser, e.g.:
   
    - Getting the API docs:
      
-     curl http://localhost:8080/cicd/userservice-spec.json
+    curl http://localhost:8080/cicd/openapi.json
     
 ### Implementation 
         

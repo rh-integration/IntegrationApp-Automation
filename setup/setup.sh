@@ -19,7 +19,7 @@ oc new-app mysql-ephemeral --param=MYSQL_PASSWORD=password --param=MYSQL_USER=db
 
 echo "Start up Broker"
 
-oc new-app -f projecttemplates/amq-broker-73-basic.yaml --param=AMQ_USER=admin --param=AMQ_PASSWORD=admin
+oc new-app -f projecttemplates/amq-broker-74-basic.yaml --param=AMQ_USER=admin --param=AMQ_PASSWORD=admin
 
 
 echo "import fuse-user-service pipeline"
@@ -36,11 +36,11 @@ oc new-app -f fuse-alert-service/src/main/resources/pipeline-app-build.yml -p IM
 
 
 echo "import integration-master-pipeline"
-oc new-app -f pipelinetemplates/pipeline-aggregated-build.yml -p IMAGE_NAMESPACE=$DEV_PROJECT -p DEV_PROJECT=$DEV_PROJECT -p TEST_PROJECT=$TEST_PROJECT -p PROD_PROJECT=$PROD_PROJECT -p PROD_PROJECT=rh-prod -p PRIVATE_BASE_URL=http://maingateway-service-rh-test.app.middleware.ocp.cloud.lab.eng.bos.redhat.com -p PUBLIC_PRODUCTION_WILDCARD_DOMAIN=app.middleware.ocp.cloud.lab.eng.bos.redhat.com -p PUBLIC_STAGING_WILDCARD_DOMAIN=staging.app.middleware.ocp.cloud.lab.eng.bos.redhat.com -p DEVELOPER_ACCOUNT_ID=ahameed@redhat.com
+oc new-app -f pipelinetemplates/pipeline-aggregated-build.yml -p IMAGE_NAMESPACE=$DEV_PROJECT -p DEV_PROJECT=$DEV_PROJECT -p TEST_PROJECT=$TEST_PROJECT -p PROD_PROJECT=$PROD_PROJECT -p PROD_PROJECT=rh-prod -p PUBLIC_PRODUCTION_WILDCARD_DOMAIN=app.your.wildcard.domain -p PUBLIC_STAGING_WILDCARD_DOMAIN=staging.app.your.wildcard.domain -p DEVELOPER_ACCOUNT_ID=developer-account
 
 
 echo "import 3scale API publishing pipeline"
-oc new-app -f cicd-3scale/3scaletoolbox/pipeline-template.yaml -p IMAGE_NAMESPACE=$DEV_PROJECT -p DEV_PROJECT=$DEV_PROJECT -p TEST_PROJECT=$TEST_PROJECT -p PROD_PROJECT=$PROD_PROJECT -p PROD_PROJECT=rh-prod -p PRIVATE_BASE_URL=http://maingateway-service-rh-test.app.middleware.ocp.cloud.lab.eng.bos.redhat.com -p PUBLIC_PRODUCTION_WILDCARD_DOMAIN=app.middleware.ocp.cloud.lab.eng.bos.redhat.com -p PUBLIC_STAGING_WILDCARD_DOMAIN=staging.app.middleware.ocp.cloud.lab.eng.bos.redhat.com -p DEVELOPER_ACCOUNT_ID=ahameed@redhat.com
+oc new-app -f cicd-3scale/3scaletoolbox/pipeline-template.yaml -p IMAGE_NAMESPACE=$DEV_PROJECT -p DEV_PROJECT=$DEV_PROJECT -p TEST_PROJECT=$TEST_PROJECT -p PROD_PROJECT=$PROD_PROJECT -p PROD_PROJECT=rh-prod  -p PUBLIC_PRODUCTION_WILDCARD_DOMAIN=app.your.wildcard.domain -p PUBLIC_STAGING_WILDCARD_DOMAIN=staging.app.your.wildcard.domain -p DEVELOPER_ACCOUNT_ID=developer-account
 
 oc new-project $TEST_PROJECT 2> /dev/null
 while [ $? \> 0 ]; do
@@ -57,7 +57,7 @@ echo "Start up MySQL for database access"
 oc new-app mysql-ephemeral --param=MYSQL_PASSWORD=password --param=MYSQL_USER=dbuser --param=MYSQL_DATABASE=sampledb
 
 echo "Start up Broker"
-oc new-app -f projecttemplates/amq-broker-73-basic.yaml --param=AMQ_USER=admin --param=AMQ_PASSWORD=admin
+oc new-app -f projecttemplates/amq-broker-74-basic.yaml --param=AMQ_USER=admin --param=AMQ_PASSWORD=admin
 
 oc policy add-role-to-user edit system:serviceaccount:${DEV_PROJECT}:jenkins -n ${TEST_PROJECT}
 oc policy add-role-to-user edit system:serviceaccount:${DEV_PROJECT}:default -n ${TEST_PROJECT}
@@ -81,7 +81,7 @@ oc project $PROD_PROJECT
 oc new-app mysql-ephemeral --param=MYSQL_PASSWORD=password --param=MYSQL_USER=dbuser --param=MYSQL_DATABASE=sampledb
 
 echo "Start up Broker"
-oc new-app -f projecttemplates/amq-broker-73-basic.yaml --param=AMQ_USER=admin --param=AMQ_PASSWORD=admin
+oc new-app -f projecttemplates/amq-broker-74-basic.yaml --param=AMQ_USER=admin --param=AMQ_PASSWORD=admin
 
 
 oc policy add-role-to-user edit system:serviceaccount:${DEV_PROJECT}:jenkins -n ${PROD_PROJECT}

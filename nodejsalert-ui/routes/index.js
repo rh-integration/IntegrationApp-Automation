@@ -131,36 +131,4 @@ router.post('/userEdit', function(req, res, next) {
 
 });
 
-
-router.get('/userAlert', function(req, res, next) {
-
-    var id = req.query.id;
-    var alertType = req.query.alertType;
-    var db = req.con;
-
-
-     var url='http://maingateway-service-cicddemo.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com/cicd/maingateway/profile/'+id+'?alertType='+alertType
-
-    request(url, function (error, response, body) {
-      if (!error && response.statusCode == 200) {
-
-        console.log(body) // Show the HTML for the Google homepage.
-          res.redirect('/');
-      }
-
-
-    });
-
-
-  //  request({
-  //      uri: 'http://maingateway-service-cicddemo.app.rhdp.ocp.cloud.lab.eng.bos.redhat.com/cicd/maingateway/profile/'+id+'?alertType='+alertType,
-  //      qs: {
-  //        api_key: '123456',
-  //        query: 'World of Warcraft: Legion'
-  //      }
-  //    }).pipe(res);
-    //  res.redirect('/');
-
-});
-
 module.exports = router;

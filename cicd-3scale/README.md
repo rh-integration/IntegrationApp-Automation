@@ -90,7 +90,7 @@ Go to [studio.apicur.io](https://studio.apicur.io/), login and import the openap
     
     ```
     or you can use same image version from [quay.io](https://quay.io/repository/redhat/3scale-toolbox?tag=v0.12.3&tab=tags)
-5. Read [3scale-toolbox Configuration]( https://github.com/rh-integration/3scale-toolbox-jenkins-samples )
+5. Read [3scale-toolbox Configuration](https://access.redhat.com/documentation/en-us/red_hat_3scale_api_management/2.6/html/operating_3scale/api-lifecyle-toolbox)
 
 6. view [3scale-toolbox Jenkins File](https://raw.githubusercontent.com/rh-integration/IntegrationApp-Automation/master/cicd-3scale/3scaletoolbox/Jenkinsfile)
 
@@ -98,7 +98,7 @@ Go to [studio.apicur.io](https://studio.apicur.io/), login and import the openap
 
 ```sh
 
-oc new-app -f cicd-3scale/3scaletoolbox/pipeline-template.yaml  -p IMAGE_NAMESPACE=rh-dev -p DEV_PROJECT=rh-dev -p TEST_PROJECT=rh-test -p PROD_PROJECT=rh-prod  -p PRIVATE_BASE_URL=http://maingateway-service-rh-test.app.middleware.ocp.cloud.lab.eng.bos.redhat.com -p PUBLIC_PRODUCTION_WILDCARD_DOMAIN=app.middleware.ocp.cloud.lab.eng.bos.redhat.com -p PUBLIC_STAGING_WILDCARD_DOMAIN=staging.app.middleware.ocp.cloud.lab.eng.bos.redhat.com -p DEVELOPER_ACCOUNT_ID=developer 
+oc new-app -f cicd-3scale/3scaletoolbox/pipeline-template.yaml  -p IMAGE_NAMESPACE=rh-dev -p DEV_PROJECT=rh-dev -p TEST_PROJECT=rh-test -p PROD_PROJECT=rh-prod  -p PRIVATE_BASE_URL=<API_URL> -p PUBLIC_PRODUCTION_WILDCARD_DOMAIN=<WILDCARD_DOMAIN> -p PUBLIC_STAGING_WILDCARD_DOMAIN=staging.<WILDCARD_DOMAIN> -p DEVELOPER_ACCOUNT_ID=developer 
 
 ```
 

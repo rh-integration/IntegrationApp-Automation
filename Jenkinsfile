@@ -197,7 +197,7 @@ pipeline {
 
                         serviceName = 'fuse-alert-service'
                         smokeTestOperation = 'cicd/alerts'
-                        body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
+                        body = ''' { "alertType": "ACCIDENT",  "firstName": "user1",  "date": "11/8/2019",  "phone": "78135955",  "email": "user1@abc.com",  "description": "test"} '''
                         makePostRequest("http://${serviceName}:8080/${smokeTestOperation}", body, 'POST')
 
                         serviceName = 'maingateway-service'
@@ -305,7 +305,7 @@ pipeline {
 
                         serviceName = 'fuse-alert-service'
                         smokeTestOperation = 'cicd/alerts'
-                        body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
+                        body = ''' { "alertType": "ACCIDENT",  "firstName": "user1",  "date": "11/8/2019",  "phone": "78135955",  "email": "user1@abc.com",  "description": "test"} '''
                         makePostRequest("http://${serviceName}:8080/${smokeTestOperation}", body, 'POST')
 
                         serviceName = 'maingateway-service'
@@ -503,7 +503,7 @@ pipeline {
 
                         serviceName = 'fuse-alert-service'
                         smokeTestOperation = 'cicd/alerts'
-                        body = ''' { "alertType": "ACCIDENT",  "firstName": "Abdul Hameed",  "date": "11/8/2019",  "phone": "78135955",  "email": "ahameed@redhat.com",  "description": "test"} '''
+                        body = ''' { "alertType": "ACCIDENT",  "firstName": "user1",  "date": "11/8/2019",  "phone": "78135955",  "email": "user1@abc.com",  "description": "test"} '''
                         makePostRequest("http://${serviceName}:8080/${smokeTestOperation}", body, 'POST')
 
 

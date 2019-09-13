@@ -86,7 +86,8 @@ post params :
 ```
 view the API Doc       
    
-   - <http://localhost:8080/cicd/fuse-alert-service.json>    
+   - <http://localhost:8080/cicd/openapi.json
+>    
     
 ### Implementation
 

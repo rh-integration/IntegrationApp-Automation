@@ -31,7 +31,7 @@
         </onException>
         <restConfiguration apiContextPath="/openapi.json" component="servlet"/>
         <rest enableCORS="true" id="rest1" path="/">
-            <get id="openapi.json" produces="application/json" uri="userservice-spec.json">
+            <get id="openapi.json" produces="application/json" uri="openapi.json">
                 <description>Gets the openapi document for this service</description>
                 <route id="rest1-route1">
                     <setHeader headerName="Exchange.CONTENT_TYPE" id="setHeader-route1">
