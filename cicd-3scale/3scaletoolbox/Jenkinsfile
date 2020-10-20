@@ -15,7 +15,7 @@ pipeline {
     parameters{
         string (defaultValue: 'notinuse', name:'OPENSHIFT_HOST', description:'open shift cluster url')
         string (defaultValue: 'notinuse', name:'OPENSHIFT_TOKEN', description:'open shift token')
-        string (defaultValue: 'docker-registry.default.svc:5000', name:'IMAGE_REGISTRY', description:'open shift token')
+        string (defaultValue: 'image-registry.openshift-image-registry.svc:5000', name:'IMAGE_REGISTRY', description:'open shift token')
         string (defaultValue: 'rh-dev', name:'IMAGE_NAMESPACE', description:'name space where image deployed')
         string (defaultValue: 'rh-dev', name:'DEV_PROJECT', description:'build or development project')
         string (defaultValue: 'rh-test', name:'TEST_PROJECT', description:'Test project')
@@ -92,7 +92,7 @@ pipeline {
 
                     retry(5) {
 
-                        sh """set -e +x
+                        sh """set -e -x
                           curl -k -f -w "UserAlert: %{http_code}\n" -o /dev/null -s ${
                             sandbox_endpoint
                         }/cicd/maingateway/profile/11111?alertType=ACCIDENT"&api-key=${service.applications[0].userkey}"
@@ -187,7 +187,7 @@ pipeline {
                     def proxy = service.readProxy("sandbox")
                     def sandbox_endpoint = proxy.sandbox_endpoint
                     retry(5) {
-                        sh """set -e +x
+                        sh """set -e -x
                           curl -k -f -w "UserAlert: %{http_code}\n" -o /dev/null -s ${
                             sandbox_endpoint
                         }/cicd/maingateway/profile/11111?alertType=ACCIDENT"&api-key=${service.applications[0].userkey}"
