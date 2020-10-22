@@ -11,11 +11,11 @@ done
 
 oc new-app jenkins-persistent
 
-echo "Setup the surrounding softwate and environment"
+echo "Setup the surrounding software and environment"
 echo
 echo "Start up MySQL for database access"
 
-oc new-app mysql-ephemeral --param=MYSQL_PASSWORD=password --param=MYSQL_USER=dbuser --param=MYSQL_DATABASE=sampledb
+oc new-app mysql-ephemeral --param=MYSQL_PASSWORD=password --param=MYSQL_USER=dbuser --param=MYSQL_DATABASE=sampledb --param=MYSQL_VERSION=5.7
 
 echo "Start up Broker"
 
@@ -36,11 +36,11 @@ oc new-app -f fuse-alert-service/src/main/resources/pipeline-app-build.yml -p IM
 
 
 echo "import integration-master-pipeline"
-oc new-app -f pipelinetemplates/pipeline-aggregated-build.yml -p IMAGE_NAMESPACE=$DEV_PROJECT -p DEV_PROJECT=$DEV_PROJECT -p TEST_PROJECT=$TEST_PROJECT -p PROD_PROJECT=$PROD_PROJECT -p PROD_PROJECT=rh-prod -p PUBLIC_PRODUCTION_WILDCARD_DOMAIN=app.your.wildcard.domain -p PUBLIC_STAGING_WILDCARD_DOMAIN=staging.app.your.wildcard.domain -p DEVELOPER_ACCOUNT_ID=developer-account
+oc new-app -f pipelinetemplates/pipeline-aggregated-build.yml -p IMAGE_NAMESPACE=$DEV_PROJECT -p DEV_PROJECT=$DEV_PROJECT -p TEST_PROJECT=$TEST_PROJECT -p PROD_PROJECT=$PROD_PROJECT -p PUBLIC_PRODUCTION_WILDCARD_DOMAIN=app.your.wildcard.domain -p PUBLIC_STAGING_WILDCARD_DOMAIN=staging.app.your.wildcard.domain -p DEVELOPER_ACCOUNT_ID=developer
 
 
 echo "import 3scale API publishing pipeline"
-oc new-app -f cicd-3scale/3scaletoolbox/pipeline-template.yaml -p IMAGE_NAMESPACE=$DEV_PROJECT -p DEV_PROJECT=$DEV_PROJECT -p TEST_PROJECT=$TEST_PROJECT -p PROD_PROJECT=$PROD_PROJECT -p PROD_PROJECT=rh-prod  -p PUBLIC_PRODUCTION_WILDCARD_DOMAIN=app.your.wildcard.domain -p PUBLIC_STAGING_WILDCARD_DOMAIN=staging.app.your.wildcard.domain -p DEVELOPER_ACCOUNT_ID=developer-account
+oc new-app -f cicd-3scale/3scaletoolbox/pipeline-template.yaml -p IMAGE_NAMESPACE=$DEV_PROJECT -p DEV_PROJECT=$DEV_PROJECT -p TEST_PROJECT=$TEST_PROJECT -p PROD_PROJECT=$PROD_PROJECT -p PUBLIC_PRODUCTION_WILDCARD_DOMAIN=app.your.wildcard.domain -p PUBLIC_STAGING_WILDCARD_DOMAIN=staging.app.your.wildcard.domain -p DEVELOPER_ACCOUNT_ID=developer
 
 oc new-project $TEST_PROJECT 2> /dev/null
 while [ $? \> 0 ]; do
@@ -54,7 +54,7 @@ echo "Setup the surrounding softwate and environment"
 echo
 echo "Start up MySQL for database access"
 
-oc new-app mysql-ephemeral --param=MYSQL_PASSWORD=password --param=MYSQL_USER=dbuser --param=MYSQL_DATABASE=sampledb
+oc new-app mysql-ephemeral --param=MYSQL_PASSWORD=password --param=MYSQL_USER=dbuser --param=MYSQL_DATABASE=sampledb --param=MYSQL_VERSION=5.7
 
 echo "Start up Broker"
 oc new-app -f projecttemplates/amq-broker-74-basic.yaml --param=AMQ_USER=admin --param=AMQ_PASSWORD=admin
@@ -78,7 +78,7 @@ echo "Setup the surrounding softwate and environment"
 echo
 echo "Start up MySQL for database access"
 oc project $PROD_PROJECT
-oc new-app mysql-ephemeral --param=MYSQL_PASSWORD=password --param=MYSQL_USER=dbuser --param=MYSQL_DATABASE=sampledb
+oc new-app mysql-ephemeral --param=MYSQL_PASSWORD=password --param=MYSQL_USER=dbuser --param=MYSQL_DATABASE=sampledb --param=MYSQL_VERSION=5.7
 
 echo "Start up Broker"
 oc new-app -f projecttemplates/amq-broker-74-basic.yaml --param=AMQ_USER=admin --param=AMQ_PASSWORD=admin

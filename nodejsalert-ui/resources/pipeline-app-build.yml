@@ -20,7 +20,7 @@ parameters:
 - name: PROD_PROJECT 
   required: true
 - name: IMAGE_REGISTRY
-  value: docker-registry.default.svc:5000
+  value: image-registry.openshift-image-registry.svc:5000
   required: true
 - name: IMAGE_NAMESPACE 
   required: true

@@ -26,7 +26,7 @@ parameters:
   value: password 
   required: false
 - name: IMAGE_REGISTRY
-  value: docker-registry.default.svc:5000
+  value: image-registry.openshift-image-registry.svc:5000
   required: true
 - name: IMAGE_NAMESPACE 
   required: true
@@ -60,7 +60,7 @@ parameters:
 - name: PLAN_YAML_FILE_PATH
   value: https://raw.githubusercontent.com/rh-integration/IntegrationApp-Automation/master/cicd-3scale/3scaletoolbox/plan.yaml
 - name: TOOLBOX_IMAGE_REGISTRY
-  value: docker-registry.default.svc:5000/rh-dev/toolbox:v0.12.4
+  value: image-registry.openshift-image-registry.svc:5000/rh-dev/toolbox:v0.12.4
 
 objects:
 - apiVersion: v1

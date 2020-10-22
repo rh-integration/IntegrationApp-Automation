@@ -15,7 +15,7 @@ pipeline {
     parameters {
         string(defaultValue: 'notinuse', name: 'OPENSHIFT_HOST', description: 'open shift cluster url')
         string(defaultValue: 'notinuse', name: 'OPENSHIFT_TOKEN', description: 'open shift token')
-        string(defaultValue: 'docker-registry.default.svc:5000', name: 'IMAGE_REGISTRY', description: 'open shift token')
+        string(defaultValue: 'image-registry.openshift-image-registry.svc:5000', name: 'IMAGE_REGISTRY', description: 'open shift token')
         string(defaultValue: 'rh-dev', name: 'IMAGE_NAMESPACE', description: 'name space where image deployed')
         string(defaultValue: 'all', name: 'DEPLOY_MODULE', description: 'target module to work on')
         string(defaultValue: 'rh-dev', name: 'DEV_PROJECT', description: 'build or development project')
@@ -581,7 +581,7 @@ pipeline {
 
                     retry(5) {
 
-                        sh """set -e +x
+                        sh """set -e -x
                           curl -k -f -w "UserAlert: %{http_code}\n" -o /dev/null -s ${
                             sandbox_endpoint
                         }/cicd/maingateway/profile/11111?alertType=ACCIDENT"&api-key=${service.applications[0].userkey}"
@@ -685,7 +685,7 @@ def deploy(folderName, projName, openShiftHost, openShiftToken, mysqlUser, mysql
 
 def makePostRequest(url, body, method) {
 
-    sh """set -e +x
+    sh """set -e -x
 
     curl -X POST   ${url} \
     -H 'cache-control: no-cache' \
@@ -700,7 +700,7 @@ def makePostRequest(url, body, method) {
 def makeGetRequest(url) {
 
 
-    sh """set -e +x
+    sh """set -e -x
                           curl -k -f -w "SmokeTest: %{http_code}\n" -o /dev/null -s ${url}
     """
 }
